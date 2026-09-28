@@ -3,10 +3,10 @@
 // is cross-origin and is never touched here: on a not-owned device nothing about
 // a pebbble may be stored, and on an owned device IndexedDB holds it instead.
 
-const CACHE = 'pebbble-shell-v1';
+const CACHE = 'pebbble-shell-v2';
 const SHELL = [
     './', './player.js', './library.js', './manifest.json', './icons/icon-192.png',
-    '../shared/format.js', '../shared/r2.js', '../shared/config.js', '../shared/i18n.js', '../shared/base.css',
+    '../shared/format.js', '../shared/cover.js', '../shared/r2.js', '../shared/config.js', '../shared/i18n.js', '../shared/base.css',
     '../shared/i18n/en.json', '../shared/i18n/fr.json', '../shared/i18n/es.json', '../shared/i18n/zh.json',
 ];
 

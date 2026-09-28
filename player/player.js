@@ -5,15 +5,17 @@ import * as F from '../shared/format.js';
 import * as R2 from '../shared/r2.js';
 import * as L from './library.js';
 import { config } from '../shared/config.js';
+import { pebbleCover } from '../shared/cover.js';
 import { initI18n, setLanguage, language, LANGUAGES, t } from '../shared/i18n.js';
 
 const $ = id => document.getElementById(id);
-const SCREENS = ['empty', 'library', 'owner', 'device', 'lock', 'list'];
+const SCREENS = ['empty', 'library', 'hero', 'owner', 'device', 'lock', 'list'];
 
 // Current pebbble
 let p = null, header = null, sealedHeader = null, pwKey = null, currentUrl = null;
 
 function screens(...visible) {
+    if (visible.includes('owner')) visible.push('hero'); // the pebbble's face shows whenever it is open
     for (const id of SCREENS) $(id).hidden = !visible.includes(id);
 }
 
@@ -40,8 +42,9 @@ async function home() {
     $('lib-list').replaceChildren(...saved.sort((a, b) => b.savedAt - a.savedAt).map(rec => {
         const row = document.createElement('div');
         row.className = 'track';
-        row.innerHTML = '<div><div class="title"></div><div class="muted"></div></div><div class="row"><button type="button" class="quiet"></button><button type="button"></button></div>';
-        row.querySelector('.title').textContent = rec.name || t('owner.someone');
+        row.innerHTML = '<div class="lib-name"><div class="cover thumb"></div><div><div class="title"></div><div class="muted"></div></div></div><div class="row"><button type="button" class="quiet"></button><button type="button"></button></div>';
+        row.querySelector('.thumb').innerHTML = pebbleCover(rec.cover || rec.id, { detail: 'thumb', ink: 'currentColor' });
+        row.querySelector('.title').textContent = rec.title || rec.name || t('owner.someone');
         row.querySelector('.muted').textContent = t('library.count', { count: rec.count });
         const [forget, open] = row.querySelectorAll('button');
         forget.textContent = t('library.forget');
@@ -97,6 +100,9 @@ function next() {
 }
 
 function renderOwner() {
+    $('cover').innerHTML = pebbleCover(F.coverSeed(header, p.id), { ink: 'currentColor' });
+    $('pebbble-name').textContent = header.name || '';
+    $('pebbble-name').hidden = !header.name;
     const { name, contact } = header.owner;
     $('owner-name').textContent = name || t('owner.someone');
     $('owner-contact').textContent = contact;
@@ -195,7 +201,7 @@ async function play(tr, btn) {
 
 async function keep() {
     const id = p.id;
-    await L.putPebbble({ id, key: p.key, pwKey, header: sealedHeader, name: header.owner.name, count: header.tracks.length, savedAt: Date.now() });
+    await L.putPebbble({ id, key: p.key, pwKey, header: sealedHeader, title: header.name, cover: F.coverSeed(header, id), name: header.owner.name, count: header.tracks.length, savedAt: Date.now() });
 
     // All tracks, including ones not open yet, so a Christmas message still opens offline.
     const wanted = header.tracks.map(tr => `${id}/${tr.f}`);

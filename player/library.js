@@ -13,7 +13,7 @@ function db() {
         const req = indexedDB.open(DB_NAME, 1);
         req.onupgradeneeded = () => {
             const d = req.result;
-            d.createObjectStore('pebbbles', { keyPath: 'id' }); // { id, key, pwKey?, header, name, count, savedAt }
+            d.createObjectStore('pebbbles', { keyPath: 'id' }); // { id, key, pwKey?, header, title, cover, name, count, savedAt }
             d.createObjectStore('files', { keyPath: 'path' });  // { path: "<id>/<file>", id, sealed }
         };
         req.onsuccess = () => resolve(req.result);

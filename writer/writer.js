@@ -1,6 +1,7 @@
 import * as F from '../shared/format.js';
 import * as R2 from '../shared/r2.js';
 import { config } from '../shared/config.js';
+import { pebbleCover } from '../shared/cover.js';
 
 const $ = id => document.getElementById(id);
 const SETTINGS_KEY = 'pebbble-writer-settings';
@@ -71,6 +72,8 @@ function renderEditor() {
     $('unlock').hidden = !locked;
     $('unlock-hint').textContent = header.hint || '(none)';
     $('fields').hidden = locked;
+    $('p-name').value = header.name || '';
+    drawCover();
     $('owner-name').value = header.owner.name;
     $('owner-contact').value = header.owner.contact;
     $('pw-new').hidden = !!header.pw;
@@ -96,6 +99,13 @@ function renderTracks() {
     }));
     if (!rows.length) $('tracks').innerHTML = '<p class="muted">No messages yet.</p>';
 }
+
+// ---------- cover ----------
+
+function drawCover() {
+    $('w-cover').innerHTML = pebbleCover(F.coverSeed(s.header, s.p.id), { ink: 'currentColor' });
+}
+$('w-reroll').onclick = () => { s.header.cover = F.newCoverSeed(); drawCover(); };
 
 // ---------- adding a message ----------
 
@@ -162,6 +172,7 @@ $('save').onclick = async () => {
     try {
         const c = creds();
         const { p, header } = s;
+        header.name = $('p-name').value.trim();
         header.owner = { name: $('owner-name').value.trim(), contact: $('owner-contact').value.trim() };
 
         const password = $('pw').value;

@@ -83,3 +83,13 @@ test('yearly window, including one that wraps the new year', () => {
     assert.equal(F.windowStatus(birthday, new Date(2030, 2, 14, 18)).state, 'open');
     assert.equal(F.windowStatus(birthday, new Date(2030, 2, 15)).opens.getFullYear(), 2031);
 });
+
+test('name and cover seed', async () => {
+    const p = F.newPebbble();
+    const h = F.newHeader({ name: 'Gab' }, 'Lullabies');
+    assert.equal(F.coverSeed(h, p.id), p.id);
+    h.cover = F.newCoverSeed();
+    const back = await F.openHeader(await F.sealHeader(h, p), p);
+    assert.equal(back.name, 'Lullabies');
+    assert.equal(F.coverSeed(back, p.id), h.cover);
+});

@@ -84,14 +84,18 @@ const checkAad = id => `pebbble/v2/pwcheck/${id}`;
 
 /**
  * Header shape:
- * { v, owner: {name, contact}, hint?, pw?: {salt, rounds, check},
+ * { v, name, cover?, owner: {name, contact}, hint?, pw?: {salt, rounds, check},
  *   tracks: [{ f, title, type, duration?, k? | wk?, window? }], updated }
  * A track carries `k` (its key) when there is no password, `wk` (its key wrapped
  * with the password key) when there is one.
  */
-export function newHeader(owner) {
-    return { v: VERSION, owner: { name: owner?.name || '', contact: owner?.contact || '' }, tracks: [], updated: Date.now() };
+export function newHeader(owner, name = '') {
+    return { v: VERSION, name, owner: { name: owner?.name || '', contact: owner?.contact || '' }, tracks: [], updated: Date.now() };
 }
+
+/** Seed for the pebbble's drawn cover: the pebbble id unless another stone was chosen. */
+export const coverSeed = (header, id) => header.cover || id;
+export const newCoverSeed = () => b64u.enc(randomBytes(9));
 
 export async function sealHeader(header, { id, key }) {
     header.updated = Date.now();

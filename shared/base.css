@@ -28,3 +28,10 @@ button:disabled { opacity: .5; cursor: default; }
 code { word-break: break-all; font-size: .8rem; }
 audio { width: 100%; margin-top: 12px; }
 [hidden] { display: none !important; }
+.cover { color: var(--fg); }
+.cover svg { display: block; width: 100%; height: auto; }
+#hero { border: 0; text-align: center; padding: 0; }
+#hero .cover { width: min(56vw, 220px); margin: 0 auto; }
+#hero h2 { font-size: 1.3rem; margin: 4px 0 0; }
+.thumb { width: 44px; flex: 0 0 44px; }
+.lib-name { display: flex; gap: 12px; align-items: center; }

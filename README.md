@@ -23,6 +23,7 @@ Storage (Cloudflare R2) only ever holds encrypted files:
 | `<id>/header` | the tag key | owner card, password hint, track list, one key per track, date windows |
 | `<id>/<file>` | that track's own key | the audio |
 
+- **Name and cover**: each pebbble has a name (like an album title) and a drawn stone from [`shared/cover.js`](shared/cover.js). The stone is generated from a seed (the pebbble id, or another one picked in the writer), so the same stone appears on every device and no image is stored.
 - **Owner card**: readable by anyone who taps the stone ("belongs to…, if found contact…").
 - **Password (optional)**: track keys are wrapped a second time with a key derived from the password (PBKDF2-SHA256, 600,000 rounds). The hint stays readable.
 - **Date windows**: one-off (`2026-12-24 → 2026-12-26`) or every year (`12-20..12-27`, may wrap the new year). This is about discovery, not security: it follows the phone's clock.
