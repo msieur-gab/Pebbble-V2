@@ -5,46 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Pebbble Writer</title>
     <link rel="stylesheet" href="../shared/base.css">
+    <link rel="icon" href="data:,">
 </head>
 <body>
 <main>
     <h1>Pebbble Writer</h1>
 
     <details id="settings">
+        <form autocomplete="off" onsubmit="return false">
         <summary>Storage settings</summary>
         <p class="muted">Kept on this device only. Create them in Cloudflare → R2 → Manage API tokens (Object Read &amp; Write, this bucket only).</p>
         <label>Account ID <input name="accountId" autocomplete="off"></label>
         <label>Access key ID <input name="accessKeyId" autocomplete="off"></label>
-        <label>Secret access key <input name="secretAccessKey" type="password" autocomplete="off"></label>
+        <label>Secret access key <input name="secretAccessKey" type="password" autocomplete="new-password" data-lpignore="true"></label>
         <label>Bucket <input name="bucket" autocomplete="off"></label>
-        <label>Public bucket URL <input name="publicBase" placeholder="https://pub-….r2.dev"></label>
-        <button id="save-settings">Save settings</button>
+        <label>Public bucket URL <input name="publicBase" autocomplete="off" placeholder="https://pub-….r2.dev"></label>
+        <button type="button" id="save-settings">Save settings</button>
+        </form>
     </details>
 
     <section id="start">
-        <button id="new">New pebbble</button>
-        <button id="scan" class="quiet">Open a pebbble by tapping it</button>
-        <label>…or paste its link <input id="link" placeholder="https://…#id.key"></label>
-        <button id="open-link" class="quiet">Open link</button>
+        <button type="button" id="new">New pebbble</button>
+        <button type="button" id="scan" class="quiet">Open a pebbble by tapping it</button>
+        <label>…or paste its link <input id="link" autocomplete="off" placeholder="https://…#id.key"></label>
+        <button type="button" id="open-link" class="quiet">Open link</button>
         <p id="start-msg" class="muted"></p>
     </section>
 
     <section id="editor" hidden>
         <h2 id="editor-title">New pebbble</h2>
 
-        <div id="unlock" hidden>
+        <form id="unlock" autocomplete="off" onsubmit="return false" hidden>
             <p>This pebbble has a password. Hint: <em id="unlock-hint"></em></p>
-            <label>Password <input id="unlock-pw" type="password"></label>
-            <button id="unlock-btn">Unlock to edit</button>
-        </div>
+            <label>Password <input id="unlock-pw" type="password" autocomplete="off" data-lpignore="true"></label>
+            <button type="button" id="unlock-btn">Unlock to edit</button>
+        </form>
 
-        <div id="fields">
-            <label>Owner name <input id="owner-name" placeholder="This pebbble belongs to…"></label>
-            <label>Owner contact <input id="owner-contact" placeholder="If found, contact…"></label>
+        <form id="fields" autocomplete="off" onsubmit="return false">
+            <label>Owner name <input id="owner-name" name="pebbble-owner" autocomplete="off" placeholder="This pebbble belongs to…"></label>
+            <label>Owner contact <input id="owner-contact" name="pebbble-contact" autocomplete="off" placeholder="If found, contact…"></label>
 
             <div id="pw-new">
-                <label>Password (optional) <input id="pw" type="password" autocomplete="new-password"></label>
-                <label>Hint shown to everyone <input id="hint"></label>
+                <label>Password (optional) <input id="pw" type="password" autocomplete="new-password" data-lpignore="true"></label>
+                <label>Hint shown to everyone <input id="hint" autocomplete="off"></label>
             </div>
             <p id="pw-set" class="muted" hidden>Password protected. Hint: <em id="hint-show"></em></p>
 
@@ -52,10 +55,10 @@
             <div id="tracks"></div>
 
             <h2>Add a message</h2>
-            <label>Title <input id="t-title"></label>
+            <label>Title <input id="t-title" autocomplete="off"></label>
             <div class="row">
                 <label>Audio file <input id="t-file" type="file" accept="audio/*"></label>
-                <button id="t-rec" class="quiet">● Record</button>
+                <button type="button" id="t-rec" class="quiet">● Record</button>
             </div>
             <label>When can it be played?
                 <select id="t-when">
@@ -69,23 +72,23 @@
                 <label>To <input id="t-to" type="date"></label>
             </div>
             <div id="t-yearly" class="row" hidden>
-                <label>From (MM-DD) <input id="t-every-a" placeholder="12-20" pattern="\d{2}-\d{2}"></label>
-                <label>To (MM-DD) <input id="t-every-b" placeholder="12-27" pattern="\d{2}-\d{2}"></label>
+                <label>From (MM-DD) <input id="t-every-a" autocomplete="off" placeholder="12-20" pattern="\d{2}-\d{2}"></label>
+                <label>To (MM-DD) <input id="t-every-b" autocomplete="off" placeholder="12-27" pattern="\d{2}-\d{2}"></label>
             </div>
-            <button id="t-add" class="quiet">Add message</button>
+            <button type="button" id="t-add" class="quiet">Add message</button>
 
-            <button id="save">Save pebbble</button>
+            <button type="button" id="save">Save pebbble</button>
             <p id="save-msg" class="muted"></p>
-        </div>
+        </form>
     </section>
 
     <section id="done" hidden>
         <h2>Saved</h2>
         <p class="muted">Tag link:</p>
         <p><code id="done-url"></code></p>
-        <button id="write-tag">Write to tag</button>
-        <button id="copy" class="quiet">Copy link</button>
-        <button id="try" class="quiet">Open in player</button>
+        <button type="button" id="write-tag">Write to tag</button>
+        <button type="button" id="copy" class="quiet">Copy link</button>
+        <button type="button" id="try" class="quiet">Open in player</button>
         <p id="tag-msg" class="muted"></p>
     </section>
 </main>

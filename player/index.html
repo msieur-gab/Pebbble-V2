@@ -6,6 +6,7 @@
     <meta name="referrer" content="no-referrer">
     <title>Pebbble</title>
     <link rel="stylesheet" href="../shared/base.css">
+    <link rel="icon" href="data:,">
 </head>
 <body>
 <main>
@@ -24,12 +25,12 @@
         <p class="muted" id="owner-contact-line">If you found it, please contact <strong id="owner-contact"></strong></p>
     </section>
 
-    <section id="lock" hidden>
+    <form id="lock" autocomplete="off" onsubmit="return false" hidden>
         <p>Hint: <em id="hint"></em></p>
         <label>Password <input id="pw" type="password" autocomplete="off"></label>
-        <button id="unlock">Open</button>
+        <button type="submit" id="unlock">Open</button>
         <p id="lock-msg" class="error"></p>
-    </section>
+    </form>
 
     <section id="list" hidden>
         <div id="tracks"></div>
