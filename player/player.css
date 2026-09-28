@@ -188,3 +188,13 @@ a { color: inherit; }
 .player.compact .stone { width: 76px; }
 .player.compact h2 { font-size: 1.2rem; margin-top: 10px; }
 .player.compact .scroll { border-top-color: var(--line); }
+
+/* Gentle install suggestion (owned phones, not yet on the home screen) */
+.install { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 16px 18px; margin: 4px 0 24px; text-align: left; }
+.install b { display: block; font-family: var(--serif); font-weight: 400; font-size: 1.15rem; margin-bottom: 4px; }
+.install p { margin: 0 0 12px; color: var(--soft); font-size: .9rem; }
+.install .row { display: flex; gap: 10px; align-items: center; }
+.install .add { padding: 10px 18px; border-radius: 999px; background: var(--ink); color: var(--paper); font-weight: 600; font-size: .9rem; }
+.install .later { padding: 10px 8px; color: var(--soft); font-size: .9rem; }
+.install .ios { margin: 0; color: var(--ink); font-size: .9rem; }
+.player .install { margin: 18px 0 0; }

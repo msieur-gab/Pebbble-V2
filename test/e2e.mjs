@@ -271,5 +271,37 @@ await wrongPc.goto(base + '/writer/');
 await wrongPc.click('#settings summary'); await wrongPc.fill('#lib-pass', 'wrong words'); await wrongPc.click('#save-settings');
 await wrongPc.waitForFunction(() => document.getElementById('mine-msg').textContent.startsWith('No pebbbles'));
 log('other passphrase sees', await wrongPc.$$eval('#mine-list .mine', r => r.length), 'pebbbles');
+// ---------- Install suggestion + persistent storage ----------
+const stubs = () => {
+  window.__persist = 0;
+  if (navigator.storage) navigator.storage.persist = async () => { window.__persist++; return true; };
+};
+// Android: Chrome fires beforeinstallprompt; we simulate it
+const andCtx = await browser.newContext({ locale: 'en-US' });
+await andCtx.addInitScript(stubs);
+const and = await andCtx.newPage(); and.on('pageerror', e => errors.push(e.message));
+await and.goto(url); await and.click('#listen');
+await on(and, 'device-sheet'); await and.click('#device-yes');
+await playing(and);
+await and.waitForFunction(() => document.getElementById('saved-note').textContent === 'Kept on this phone');
+log('storage kept permanently requested:', await and.evaluate(() => window.__persist > 0));
+await and.evaluate(() => { const e = new Event('beforeinstallprompt'); e.prompt = () => { window.__prompted = true; }; e.userChoice = Promise.resolve({ outcome: 'accepted' }); window.dispatchEvent(e); });
+await and.waitForSelector('#pl-install .install');
+log('Android, in the sheet:', await and.$eval('#pl-install .install', el => el.innerText.replace(/\s*\n\s*/g, ' | ')));
+await and.click('#pl-install [data-install="add"]');
+log('Android install prompt shown:', await and.evaluate(() => window.__prompted === true), '| card gone:', !(await and.$('#pl-install .install')));
+// iPhone: no prompt event; the card explains the Share step, 'Not now' hides it
+const iosCtx = await browser.newContext({ locale: 'en-US', userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1' });
+const ios = await iosCtx.newPage(); ios.on('pageerror', e => errors.push(e.message));
+await ios.goto(url); await ios.click('#listen');
+await on(ios, 'device-sheet'); await ios.click('#device-yes');
+await playing(ios);
+await ios.waitForSelector('#pl-install .install');
+log('iPhone, in the sheet:', await ios.$eval('#pl-install .install', el => el.innerText.replace(/\s*\n\s*/g, ' | ')));
+await ios.click('#pl-install [data-install="later"]');
+await ios.goto(base + '/player/'); await ios.waitForSelector('#shelf');
+log('iPhone after "Not now", library shows card:', !!(await ios.$('.install')));
+// Not-owned phone: never suggested
+log('not-owned phone shows card:', !!(await open3.$('.install')));
 log('page errors', errors.length ? errors : 'none');
 await browser.close();

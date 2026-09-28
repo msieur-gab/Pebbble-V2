@@ -100,5 +100,12 @@
     "saving": "Voix gardées pour hors ligne ({done}/{total})…",
     "saved": "Gardé sur ce téléphone",
     "tapPlay": "Touche lecture pour écouter"
+  },
+  "install": {
+    "title": "Garder Pebbble sur ce téléphone",
+    "text": "Ajoute-le à ton écran d’accueil. Il s’ouvre même sans internet, et les voix restent à l’abri ici.",
+    "add": "Ajouter à l’écran d’accueil",
+    "later": "Plus tard",
+    "ios": "Touche Partager, puis « Sur l’écran d’accueil »."
   }
 }

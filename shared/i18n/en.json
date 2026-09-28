@@ -100,5 +100,12 @@
     "saving": "Keeping voices for offline ({done}/{total})…",
     "saved": "Kept on this phone",
     "tapPlay": "Tap play to listen"
+  },
+  "install": {
+    "title": "Keep Pebbble on this phone",
+    "text": "Add it to your home screen. It opens even without internet, and the voices stay safe here.",
+    "add": "Add to home screen",
+    "later": "Not now",
+    "ios": "Tap Share, then “Add to Home Screen”."
   }
 }

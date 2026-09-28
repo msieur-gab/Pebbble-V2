@@ -44,6 +44,7 @@ Two web apps, no build step, no runtime dependencies:
 - **Gestures**: drag the sheet's top down to fold it into the mini player; on the mini player, swipe sideways for next/previous and swipe up or tap to unfold. The drag zone swallows the click that follows a drag; the drag state resets on the next tick (this bug has bitten once).
 - Menu "···" on the sheet: *Edit this pebbble* (only when the pebbble is in this browser's writer library, `localStorage['pebbble-writer-library']`; it opens `../writer/#id.key`), *Forget on this phone* (owned phones, tap twice), *Settings*. Menu and settings stack over the sheet; the scrim closes only the top sheet.
 - Wording: the content is **"voices"**; date-locked voices are **"sleeping"** and "wake" on a date. Four languages in `shared/i18n/{en,fr,es,zh}.json`. Every user-facing player string goes through `t()`, and all four files must keep identical keys.
+- **Keeping voices on owned phones**: `keep()` calls `navigator.storage.persist()` so the browser doesn't evict saved voices. A gentle install card ("Keep Pebbble on this phone") appears on owned phones not yet running from the home screen: Android uses the captured `beforeinstallprompt`; iPhone (no prompt API) gets "Tap Share, then Add to Home Screen", which matters because Safari clears website storage after a few weeks without use unless the app is on the home screen. "Not now" hides it for 30 days. Never shown on not-owned phones.
 - Settings shows a version label (`VERSION` in player.js). **Bump it with every player change** so Gab can tell which version his phone runs.
 
 ## Hard-won lessons
@@ -68,4 +69,5 @@ The e2e test covers: encryption at rest, arrival, device question, password (wro
 
 - **Writer redesign**: still the plain early UI. Big friction: typing R2 account ID and keys by hand. Rethink setup for simplicity.
 - **Hint language**: the hint is written in the creator's language and never translated; solutions are under discussion (see the conversation notes Gab keeps).
+- Threat model (agreed with Gab): possession of the stone = access; password and date locks strengthen it; date locks follow the phone's clock by design (working that out is part of growing up). Host, domain or web changes over decades are accepted as outside Pebbble's control; the encrypted files can be moved to any host, and only the tag address would need rewriting.
 - Custom domain before giving stones away (the app URL is baked into every tag); tag locking option; upload server with edit keys if Pebbble ever becomes a service; a dark mode would need light-ink stones.

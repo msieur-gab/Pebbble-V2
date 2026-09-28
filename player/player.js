@@ -19,7 +19,7 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
 const mmss = s => (isFinite(s) ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}` : '0:00');
 const stone = (seed, detail = 'full') => pebbleCover(seed, { detail });
 const audio = $('audio');
-const VERSION = '2026-09-28 · 15:15'; // shown in Settings, to tell which version a phone runs
+const VERSION = '2026-09-28 · 15:40'; // shown in Settings, to tell which version a phone runs
 
 const ICON = {
     play: '<svg class="icon" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>',
@@ -110,12 +110,12 @@ async function renderLibrary() {
     const saved = L.isOwned() ? (await L.listPebbbles()).sort((a, b) => b.savedAt - a.savedAt) : [];
     const bar = `<div class="bar"><span></span><span></span><button class="icon-btn" id="open-settings" aria-label="${t('settings.title')}">${ICON.settings}</button></div>`;
     if (!saved.length) {
-        draw(`${bar}<section class="empty"><div class="rings"><i></i><i></i><i></i><b></b></div>
+        draw(`${bar}${installCard()}<section class="empty"><div class="rings"><i></i><i></i><i></i><b></b></div>
             <h1 class="serif" style="font-size:1.6rem;margin:0 0 8px">${t('library.emptyTitle')}</h1>
             <p class="soft" style="max-width:280px;margin:0 auto">${t('library.emptyText')}</p>
             <p class="faint" style="font-size:.82rem;max-width:280px;margin:18px auto 0">${t('library.iphone')}</p></section>`);
     } else {
-        draw(`${bar}<section class="library"><h1 class="serif">${t('library.title')}</h1>
+        draw(`${bar}<section class="library"><h1 class="serif">${t('library.title')}</h1>${installCard()}
             <div class="shelf" id="shelf">${saved.map(rec => `<button data-id="${esc(rec.id)}"><div class="stone">${stone(rec.cover || rec.id)}</div>
                 <div class="name">${esc(rec.title || rec.name || '')}</div><div class="sub">${plural('library.count', rec.count)}</div></button>`).join('')}</div></section>`);
         for (const b of $('shelf').querySelectorAll('button')) {
@@ -124,6 +124,7 @@ async function renderLibrary() {
         }
     }
     $('open-settings').onclick = () => openSheet('settings-sheet');
+    wireInstall();
 }
 
 async function home() {
@@ -224,6 +225,8 @@ $('unlock').onclick = async () => {
 
 async function keep() {
     const id = p.id;
+    // Ask the browser not to clear saved voices when space runs low (granted silently or not at all).
+    navigator.storage?.persist?.().catch(() => {});
     await L.putPebbble({ id, key: p.key, pwKey, header: sealedHeader, title: header.name, cover: seed(), name: header.owner.name, count: header.tracks.length, savedAt: Date.now() });
     // All voices, sleeping ones too, so a Christmas voice still wakes offline.
     const wanted = header.tracks.map(tr => `${id}/${tr.f}`);
@@ -236,7 +239,11 @@ async function keep() {
         done++;
     }
     for (const path of await L.filePaths(id)) if (!wanted.includes(path)) await L.deleteFile(path);
-    if (p?.id === id) setSaved(t('status.saved'));
+    if (p?.id === id) {
+        setSaved(t('status.saved'));
+        $('pl-install').innerHTML = installCard();
+        wireInstall();
+    }
 }
 function setSaved(text) { savedNote = text; if ($('saved-note')) $('saved-note').textContent = text; }
 
@@ -495,6 +502,47 @@ if ('mediaSession' in navigator) {
     ms.setActionHandler('nexttrack', () => skip(1));
 }
 
+// ---------- gentle install suggestion ----------
+// Owned phones only, when Pebbble isn't already on the home screen. Android/Chrome offers
+// its own install prompt; iPhone has none, so we explain the Share step instead.
+// "Not now" is remembered for 30 days.
+
+let installPrompt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; rerenderInstall(); });
+window.addEventListener('appinstalled', () => { installPrompt = null; rerenderInstall(); });
+
+const INSTALL_LATER = 'pebbble-install-later';
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function installWanted() {
+    if (!L.isOwned() || isStandalone()) return false;
+    try { if (Date.now() - Number(localStorage.getItem(INSTALL_LATER) || 0) < 30 * 864e5) return false; } catch {}
+    return !!installPrompt || isIOS();
+}
+function installCard() {
+    if (!installWanted()) return '';
+    const action = installPrompt
+        ? `<div class="row"><button class="add" data-install="add">${t('install.add')}</button><button class="later" data-install="later">${t('install.later')}</button></div>`
+        : `<div class="row"><p class="ios">${t('install.ios')}</p><button class="later" data-install="later">${t('install.later')}</button></div>`;
+    return `<div class="install" id="install-card"><b>${t('install.title')}</b><p>${t('install.text')}</p>${action}</div>`;
+}
+function wireInstall() {
+    for (const b of document.querySelectorAll('[data-install]')) b.onclick = async () => {
+        if (b.dataset.install === 'add' && installPrompt) {
+            installPrompt.prompt();
+            await installPrompt.userChoice.catch(() => {});
+            installPrompt = null;
+        } else {
+            try { localStorage.setItem(INSTALL_LATER, String(Date.now())); } catch {}
+        }
+        rerenderInstall();
+    };
+}
+function rerenderInstall() {
+    if (view === 'library') renderLibrary();
+    if ($('pl-install') && savedNote === t('status.saved')) { $('pl-install').innerHTML = installCard(); wireInstall(); }
+}
+
 // ---------- this pebbble: edit / forget / settings ----------
 
 function isMine({ id, key }) {
@@ -553,6 +601,7 @@ function renderSettings() {
 }
 $('set-mine').onclick = async () => {
     await L.setMode('owned');
+    navigator.storage?.persist?.().catch(() => {});
     renderSettings();
     toast(t('settings.nowMine'));
     if (header) { renderSheet(); keep(); }

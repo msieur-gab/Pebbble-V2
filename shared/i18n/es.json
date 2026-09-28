@@ -100,5 +100,12 @@
     "saving": "Guardando voces sin conexión ({done}/{total})…",
     "saved": "Guardado en este teléfono",
     "tapPlay": "Toca reproducir para escuchar"
+  },
+  "install": {
+    "title": "Guardar Pebbble en este teléfono",
+    "text": "Añádelo a tu pantalla de inicio. Se abre incluso sin internet y las voces quedan seguras aquí.",
+    "add": "Añadir a la pantalla de inicio",
+    "later": "Ahora no",
+    "ios": "Toca Compartir y luego «Añadir a pantalla de inicio»."
   }
 }
