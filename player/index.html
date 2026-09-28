@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <title>Pebbble</title>
+    <link rel="stylesheet" href="../shared/base.css">
+</head>
+<body>
+<main>
+    <h1>Pebbble</h1>
+
+    <section id="empty">
+        <p>Tap your pebbble with the phone to open it.</p>
+        <p class="muted">iPhone: keep the screen unlocked, hold the stone near the top of the phone, then tap the notification.</p>
+    </section>
+
+    <p id="status" class="muted" hidden></p>
+
+    <section id="owner" hidden>
+        <p class="muted">This pebbble belongs to</p>
+        <p><strong id="owner-name"></strong></p>
+        <p class="muted" id="owner-contact-line">If you found it, please contact <strong id="owner-contact"></strong></p>
+    </section>
+
+    <section id="lock" hidden>
+        <p>Hint: <em id="hint"></em></p>
+        <label>Password <input id="pw" type="password" autocomplete="off"></label>
+        <button id="unlock">Open</button>
+        <p id="lock-msg" class="error"></p>
+    </section>
+
+    <section id="list" hidden>
+        <div id="tracks"></div>
+        <audio id="audio" controls hidden></audio>
+    </section>
+</main>
+<script type="module" src="player.js"></script>
+</body>
+</html>

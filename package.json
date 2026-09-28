@@ -1,0 +1,13 @@
+{
+  "name": "pebbble-v2",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "serve": "node test/dev-server.js",
+    "e2e": "node test/e2e.mjs"
+  },
+  "devDependencies": {
+    "aws4": "^1.13.2"
+  }
+}
