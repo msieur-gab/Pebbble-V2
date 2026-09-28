@@ -71,7 +71,7 @@ npm run e2e          # full writer → player flow in headless Chromium (needs p
 
 ### 2. Config
 
-In [`shared/config.js`](shared/config.js), replace `https://pub-073de7a826d54d4490642e8ce5e90072.r2.dev` with your bucket's public URL.
+`publicBase` in [`shared/config.js`](shared/config.js) holds the bucket's public URL. Change it there if the bucket ever moves.
 
 ### 3. GitHub Pages
 
