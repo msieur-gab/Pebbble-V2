@@ -152,11 +152,39 @@ function renderEditor() {
     $('pw-change').value = '';
     renderTracks();
     show('editor');
+    if (!locked) measureMissing();
 }
+
+/**
+ * Voices added before lengths were recorded: decrypt each once, measure it, and keep
+ * the length with the next save so every phone shows it.
+ */
+async function measureMissing() {
+    const state = s;
+    if (state.measured) return;
+    state.measured = true;
+    const missing = state.header.tracks.filter(tr => !tr.duration);
+    let n = 0;
+    for (const tr of missing) {
+        try {
+            const sealed = await R2.get(publicBase(), `${state.p.id}/${tr.f}`);
+            const bytes = await F.openTrack(sealed, state.p.id, tr.f, await F.trackKey(tr, state.p.id, state.pwKey));
+            const d = await audioDuration(new Blob([bytes], { type: tr.type }));
+            if (s !== state) return; // another pebbble was opened meanwhile
+            if (d) { tr.duration = d; n++; }
+        } catch {}
+    }
+    if (n) {
+        renderTracks();
+        $('save-msg').textContent = `Measured the length of ${n} voice${n > 1 ? 's' : ''}. Save to keep ${n > 1 ? 'them' : 'it'}.`;
+    }
+}
+
+const mmss = sec => `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}`;
 
 function renderTracks() {
     const rows = [
-        ...s.header.tracks.map(t => ({ title: t.title, window: t.window, remove: () => { s.removed.push(t.f); s.header.tracks = s.header.tracks.filter(x => x !== t); } })),
+        ...s.header.tracks.map(t => ({ title: t.title, window: t.window, duration: t.duration, remove: () => { s.removed.push(t.f); s.header.tracks = s.header.tracks.filter(x => x !== t); } })),
         ...s.pending.map(t => ({ title: `${t.title} (new)`, window: t.window, remove: () => { s.pending = s.pending.filter(x => x !== t); } })),
     ];
     $('tracks').replaceChildren(...rows.map(r => {
@@ -164,7 +192,7 @@ function renderTracks() {
         row.className = 'track';
         row.innerHTML = `<div><div class="title"></div><div class="muted"></div></div><button class="quiet">Remove</button>`;
         row.querySelector('.title').textContent = r.title;
-        row.querySelector('.muted').textContent = windowLabel(r.window);
+        row.querySelector('.muted').textContent = [windowLabel(r.window), r.duration ? mmss(r.duration) : ''].filter(Boolean).join(' · ');
         row.querySelector('button').onclick = () => { r.remove(); renderTracks(); };
         return row;
     }));

@@ -1,7 +1,9 @@
 // Pebbble player.
 //
-// Views (drawn into #app): arrival (a stone was just tapped), pebbble page, library.
-// Sheets: first-time device question, password, this-pebbble menu, settings, full player.
+// Behind (drawn into #app): arrival (a stone was just tapped) or the library.
+// The pebbble itself is one sheet: stone, now playing, controls and its voices.
+// Dragged down it folds into the mini player; swiping the mini player changes voice.
+// Other sheets (device question, password, menu, settings) open over it.
 //
 // Not-owned phone: everything lives in memory and is gone when the page closes.
 // Owned phone: header, keys and audio are kept in IndexedDB for offline listening.
@@ -75,35 +77,30 @@ function renderArrival() {
     $('listen').onclick = proceed;
 }
 
-function renderPebbble(keepScroll = false) {
-    view = 'pebbble';
+/** The pebbble sheet's static parts: name, voices, owner line, notes. */
+function renderSheet() {
     const { name, contact } = header.owner;
-    const count = header.tracks.length;
+    $('pl-name').textContent = header.name || name || '';
+    $('pl-status').hidden = !offline && header.tracks.length > 0;
+    $('pl-status').textContent = header.tracks.length ? t('status.offline') : t('status.empty');
+    $('controls').hidden = openIdx().length === 0;
+    $('pl-foot').innerHTML = name || contact ? `${name ? t('page.foot', { name: esc(name) }) : ''}${name && contact ? ' · ' : ''}${contact ? t('page.footContact', { contact: `<a href="mailto:${esc(contact)}">${esc(contact)}</a>` }) : ''}` : '';
+    $('saved-note').textContent = savedNote;
+    renderVoices();
+    updatePlayer();
+}
+
+function renderVoices() {
+    if (!header) return;
     const playing = !audio.paused;
-    draw(`
-        <div class="bar">
-            ${L.isOwned() ? `<button class="icon-btn" id="to-lib" aria-label="${t('page.myPebbbles')}">${ICON.back}</button>` : '<span style="width:44px"></span>'}
-            <span class="title">${L.isOwned() ? t('page.myPebbbles') : ''}</span>
-            <button class="icon-btn" id="open-menu" aria-label="${t('menu.label')}">${ICON.dots}</button>
-        </div>
-        ${offline ? `<p class="status inline">${t('status.offline')}</p>` : ''}
-        <div class="pebbble-head">
-            <div class="stone ${playing ? 'breathing' : ''}" id="head-stone">${stone(seed())}</div>
-            ${header.name ? `<h1 class="serif" id="pebbble-name">${esc(header.name)}</h1>` : ''}
-            <div class="meta soft">${name ? t(count === 1 ? 'page.meta_one' : 'page.meta', { name: esc(name), count }) : plural('library.count', count)}</div>
-        </div>
-        ${count ? `<ol class="voices">${header.tracks.map((tr, i) => {
-            const w = windowOf(tr);
-            if (w.state === 'locked') return `<li class="voice sleeping"><span class="n">${ICON.moonSmall}</span><span class="t">${esc(tr.title)}<span class="wake">${t('voice.wakes', { date: fmtDate(w.opens) })}</span></span></li>`;
-            if (w.state === 'past') return `<li class="voice sleeping"><span class="n">·</span><span class="t">${esc(tr.title)}<span class="wake">${t('voice.quiet')}</span></span></li>`;
-            const cur = i === PL.idx;
-            return `<li class="voice ${cur ? 'current' : ''}" data-i="${i}"><span class="n">${cur ? `<span class="eq ${playing ? '' : 'paused'}"><i></i><i></i><i></i></span>` : i + 1}</span><span class="t">${esc(tr.title)}${w.closes ? `<span class="wake">${t('voice.until', { date: fmtDate(w.closes) })}</span>` : ''}</span><span class="d">${tr.duration ? mmss(tr.duration) : ''}</span></li>`;
-        }).join('')}</ol>` : `<p class="status inline">${t('status.empty')}</p>`}
-        ${name || contact ? `<p class="foot-note">${name ? t('page.foot', { name: esc(name) }) : ''}${name && contact ? ' · ' : ''}${contact ? t('page.footContact', { contact: `<a href="mailto:${esc(contact)}">${esc(contact)}</a>` }) : ''}</p>` : ''}
-        <p class="saved-note" id="saved-note">${esc(savedNote)}</p>`, keepScroll);
-    for (const li of $('app').querySelectorAll('.voice[data-i]')) li.onclick = () => { playAt(+li.dataset.i); openPlayer(); };
-    if ($('to-lib')) $('to-lib').onclick = () => home();
-    $('open-menu').onclick = openMenu;
+    $('voices').innerHTML = header.tracks.map((tr, i) => {
+        const w = windowOf(tr);
+        if (w.state === 'locked') return `<li class="voice sleeping"><span class="n">${ICON.moonSmall}</span><span class="t">${esc(tr.title)}<span class="wake">${t('voice.wakes', { date: fmtDate(w.opens) })}</span></span></li>`;
+        if (w.state === 'past') return `<li class="voice sleeping"><span class="n">·</span><span class="t">${esc(tr.title)}<span class="wake">${t('voice.quiet')}</span></span></li>`;
+        const cur = i === PL.idx;
+        return `<li class="voice ${cur ? 'current' : ''}" data-i="${i}"><span class="n">${cur ? `<span class="eq ${playing ? '' : 'paused'}"><i></i><i></i><i></i></span>` : i + 1}</span><span class="t">${esc(tr.title)}${w.closes ? `<span class="wake">${t('voice.until', { date: fmtDate(w.closes) })}</span>` : ''}</span><span class="d">${tr.duration ? mmss(tr.duration) : ''}</span></li>`;
+    }).join('');
+    for (const li of $('voices').querySelectorAll('.voice[data-i]')) li.onclick = () => (+li.dataset.i === PL.idx ? toggle() : playAt(+li.dataset.i));
 }
 
 async function renderLibrary() {
@@ -128,14 +125,13 @@ async function renderLibrary() {
 }
 
 async function home() {
-    closeSheets();
     await renderLibrary();
 }
 
 const rerender = () => {
     if (view === 'arrival') renderArrival();
-    else if (view === 'pebbble') renderPebbble(true);
     else if (view === 'library') renderLibrary();
+    if (header) renderSheet();
 };
 
 // ---------- opening a pebbble ----------
@@ -186,10 +182,12 @@ async function load(found, { direct = false } = {}) {
 function proceed() {
     if (!L.getMode()) return openSheet('device-sheet');
     if (header.pw && !pwKey) return askPassword();
-    renderPebbble();
-    if (L.isOwned()) keep();
+    if (PL.idx >= 0) return openPlayer(); // already playing this pebbble: just unfold it
+    if (L.isOwned()) { keep(); renderLibrary(); } // behind the sheet: the shelf, now with this stone
+    renderSheet();
+    openPlayer();
     const first = openIdx()[0];
-    if (first !== undefined) { playAt(first); openPlayer(); }
+    if (first !== undefined) playAt(first);
 }
 
 for (const [id, mode] of [['device-yes', 'owned'], ['device-no', 'guest']]) {
@@ -264,6 +262,7 @@ async function playAt(i) {
         toast(t('status.couldNotPlay', { title: tr.title }));
     }
     updatePlayer();
+    renderVoices();
     setMediaSession();
 }
 
@@ -293,7 +292,12 @@ audio.addEventListener('ended', () => {
     updatePlayer();
 });
 audio.addEventListener('timeupdate', () => { checkSleep(); updateProgress(); });
-for (const ev of ['play', 'pause']) audio.addEventListener(ev, () => { updatePlayer(); if (view === 'pebbble') renderPebbble(true); });
+for (const ev of ['play', 'pause']) audio.addEventListener(ev, () => { updatePlayer(); renderVoices(); });
+// Voices added before lengths were recorded: show the length once it is known.
+audio.addEventListener('loadedmetadata', () => {
+    const tr = header?.tracks[PL.idx];
+    if (tr && !tr.duration && isFinite(audio.duration)) { tr.duration = Math.round(audio.duration); renderVoices(); }
+});
 
 function checkSleep() {
     if (PL.sleep > 0 && Date.now() >= PL.sleepAt) {
@@ -323,20 +327,19 @@ function updateSleepLabel() {
 }
 
 function updatePlayer() {
-    if (!header || PL.idx < 0) return renderMini();
-    const tr = header.tracks[PL.idx];
-    const list = openIdx();
-    const playing = !audio.paused;
-    $('pl-from').textContent = header.name || '';
-    $('pl-title').textContent = tr.title;
-    $('pl-sub').textContent = t('player.of', { name: header.name || header.owner.name || '', n: list.indexOf(PL.idx) + 1, total: list.length }).replace(/^ · /, '');
+    if (!header) return renderMini();
     const s = seed();
     if ($('pl-stone').dataset.seed !== s) { $('pl-stone').innerHTML = stone(s); $('mini-stone').innerHTML = stone(s, 'thumb'); $('pl-stone').dataset.seed = s; }
+    const playing = !audio.paused;
     $('pl-stone').classList.toggle('breathing', playing);
+    const tr = header.tracks[PL.idx];
+    const list = openIdx();
+    $('pl-title').textContent = tr ? tr.title : header.name || '';
+    $('pl-sub').textContent = tr ? t('player.of', { name: header.name || header.owner.name || '', n: list.indexOf(PL.idx) + 1, total: list.length }).replace(/^ · /, '') : '';
     $('play').innerHTML = playing ? ICON.pause : ICON.play;
     $('play').setAttribute('aria-label', t(playing ? 'player.pause' : 'player.play'));
     $('mini-play').innerHTML = playing ? ICON.pauseSmall : ICON.playSmall;
-    $('mini-title').textContent = tr.title;
+    $('mini-title').textContent = tr?.title || '';
     $('mini-sub').textContent = header.name || '';
     $('repeat').innerHTML = `${ICON.repeat}<span>${t({ off: 'player.repeatOff', all: 'player.repeatAll', one: 'player.repeatOne' }[PL.repeat])}</span>`;
     $('repeat').classList.toggle('active', PL.repeat !== 'off');
@@ -348,12 +351,79 @@ function updatePlayer() {
 
 function renderMini() {
     const anySheet = [...document.querySelectorAll('.sheet')].some(s => s.classList.contains('on'));
-    $('mini').classList.toggle('on', PL.idx >= 0 && !anySheet && (view === 'pebbble' || view === 'library'));
+    $('mini').classList.toggle('on', PL.idx >= 0 && !anySheet && view !== 'status');
 }
 
-function openPlayer() { updatePlayer(); openSheet('player'); $('scrim').classList.remove('on'); renderMini(); }
-$('collapse').onclick = () => { closeSheets(); if (view === 'pebbble') renderPebbble(true); };
-$('mini-open').onclick = e => { if (!e.target.closest('#mini-play')) openPlayer(); };
+function openPlayer() { updatePlayer(); openSheet('player'); }
+const collapse = () => closeSheets();
+$('collapse').onclick = collapse;
+$('mini-open').onclick = e => { if (miniSwiped) return; if (!e.target.closest('#mini-play')) openPlayer(); };
+
+// ---------- gestures ----------
+
+// Drag the top of the sheet down to fold it into the mini player.
+{
+    const sheet = $('player'), zone = $('drag-zone');
+    let y0 = null, dy = 0, t0 = 0, dragging = false;
+    zone.addEventListener('pointerdown', e => {
+        if (sheet.scrollTop > 0 || e.button > 0) return;
+        y0 = e.clientY; dy = 0; t0 = performance.now(); dragging = false;
+    });
+    zone.addEventListener('pointermove', e => {
+        if (y0 === null) return;
+        dy = Math.max(0, e.clientY - y0);
+        if (!dragging && dy > 8) { dragging = true; zone.setPointerCapture(e.pointerId); sheet.classList.add('dragging'); }
+        if (dragging) sheet.style.transform = `translateY(${dy}px)`;
+    });
+    const end = () => {
+        if (y0 === null) return;
+        const fast = dy / (performance.now() - t0) > 0.6;
+        sheet.classList.remove('dragging');
+        sheet.style.transform = '';
+        if (dragging && (dy > 120 || (fast && dy > 40))) collapse();
+        y0 = null;
+        setTimeout(() => { dragging = false; }, 0); // after the click that may follow this pointerup
+    };
+    zone.addEventListener('pointerup', end);
+    zone.addEventListener('pointercancel', end);
+    // A drag must not also count as a tap on the buttons in the zone.
+    zone.addEventListener('click', e => { if (dragging) { e.stopPropagation(); e.preventDefault(); } }, true);
+}
+
+// Mini player: swipe sideways to change voice, swipe up (or tap) to unfold.
+let miniSwiped = false;
+{
+    const inner = $('mini-open');
+    let x0 = null, y0 = 0, dx = 0, dy = 0;
+    inner.addEventListener('pointerdown', e => { if (e.target.closest('#mini-play')) return; x0 = e.clientX; y0 = e.clientY; dx = dy = 0; miniSwiped = false; });
+    inner.addEventListener('pointermove', e => {
+        if (x0 === null) return;
+        dx = e.clientX - x0; dy = e.clientY - y0;
+        if (!miniSwiped && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) { miniSwiped = true; inner.setPointerCapture(e.pointerId); inner.classList.add('dragging'); }
+        if (miniSwiped) { inner.style.transform = `translateX(${dx}px)`; inner.style.opacity = String(1 - Math.min(0.6, Math.abs(dx) / 300)); }
+    });
+    const end = () => {
+        if (x0 === null) return;
+        inner.classList.remove('dragging');
+        if (miniSwiped && Math.abs(dx) > 60) {
+            const dir = dx < 0 ? 1 : -1;
+            inner.style.transform = `translateX(${dir * -120}%)`; inner.style.opacity = '0';
+            setTimeout(() => {
+                skip(dir);
+                inner.classList.add('dragging');
+                inner.style.transform = `translateX(${dir * 60}%)`;
+                requestAnimationFrame(() => { inner.classList.remove('dragging'); inner.style.transform = ''; inner.style.opacity = ''; });
+            }, 180);
+        } else {
+            inner.style.transform = ''; inner.style.opacity = '';
+            if (!miniSwiped && dy < -30) openPlayer();
+        }
+        x0 = null;
+        setTimeout(() => { miniSwiped = false; }, 50);
+    };
+    inner.addEventListener('pointerup', end);
+    inner.addEventListener('pointercancel', end);
+}
 $('mini-play').onclick = toggle;
 $('play').onclick = toggle;
 $('prev').onclick = () => skip(-1);
@@ -435,6 +505,7 @@ function resetForget() {
     $('m-forget').classList.remove('confirm');
     $('m-forget').innerHTML = `${ICON.leaf}<span><b>${t('menu.forget')}</b><span>${t('menu.forgetText')}</span></span>`;
 }
+$('open-menu').onclick = openMenu;
 $('m-edit').onclick = () => { location.href = `../writer/#${p.id}.${p.key}`; };
 $('m-settings').onclick = () => openSheet('settings-sheet');
 $('m-forget').onclick = async () => {
@@ -448,6 +519,7 @@ $('m-forget').onclick = async () => {
     stopPlayback();
     await L.forget(p.id);
     p = header = null;
+    closeSheets();
     await home();
     toast(t('menu.forgotten', { name }));
 };
@@ -469,7 +541,7 @@ $('set-mine').onclick = async () => {
     await L.setMode('owned');
     renderSettings();
     toast(t('settings.nowMine'));
-    if (header && view === 'pebbble') { renderPebbble(true); keep(); }
+    if (header) { renderSheet(); keep(); }
 };
 $('set-notmine').onclick = async () => {
     if (L.isOwned() && !confirm(t('settings.clearConfirm'))) return;
@@ -477,7 +549,7 @@ $('set-notmine').onclick = async () => {
     savedNote = '';
     renderSettings();
     toast(t('settings.nowNotMine'));
-    if (view === 'pebbble') renderPebbble(true);
+    if (header) renderSheet();
     if (view === 'library') renderLibrary();
 };
 $('clear').onclick = async () => {
@@ -486,25 +558,43 @@ $('clear').onclick = async () => {
     savedNote = '';
     toast(t('settings.cleared'));
     if (view === 'library') renderLibrary();
-    if (view === 'pebbble') renderPebbble(true);
+    if (header) renderSheet();
 };
 
 // ---------- sheets & toast ----------
 
+/**
+ * The pebbble sheet stays open underneath; other sheets open over it with the scrim
+ * between them. Tapping the scrim closes only the sheet on top.
+ */
 function openSheet(id) {
-    closeSheets(true);
-    $('scrim').classList.add('on');
+    const playerOn = $('player').classList.contains('on');
+    for (const sh of document.querySelectorAll('.sheet.on')) if (sh.id !== 'player' || id === 'player' || !playerOn) sh.classList.remove('on', 'over');
+    if (id === 'player') {
+        $('scrim').classList.remove('on');
+    } else {
+        $('scrim').classList.add('on');
+        $('scrim').classList.toggle('over', playerOn);
+        $(id).classList.toggle('over', playerOn);
+    }
     $(id).classList.add('on');
     if (id === 'settings-sheet') renderSettings();
     renderMini();
 }
-function closeSheets(keepScrim) {
-    for (const s of document.querySelectorAll('.sheet')) s.classList.remove('on');
-    $('sleep-choices').hidden = true;
-    if (!keepScrim) $('scrim').classList.remove('on');
+function closeTop() {
+    const over = document.querySelector('.sheet.over.on');
+    if (!over) return closeSheets();
+    over.classList.remove('on', 'over');
+    $('scrim').classList.remove('on', 'over');
     renderMini();
 }
-$('scrim').onclick = () => closeSheets();
+function closeSheets() {
+    for (const sh of document.querySelectorAll('.sheet')) sh.classList.remove('on', 'over');
+    $('sleep-choices').hidden = true;
+    $('scrim').classList.remove('on', 'over');
+    renderMini();
+}
+$('scrim').onclick = closeTop;
 
 let toastTimer;
 function toast(msg) {

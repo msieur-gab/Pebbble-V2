@@ -162,3 +162,17 @@ a { color: inherit; }
 .status.inline { padding: 0 0 12px; font-size: .85rem; }
 .saved-note { text-align: center; font-size: .8rem; color: var(--faint); margin: 14px 0 0; }
 .lock-msg { color: #9a3b2a; font-size: .9rem; min-height: 1.4em; margin: 10px 0 0; text-align: center; }
+
+/* The pebbble sheet: stone + controls + voices, scrolls as one; drag the top down to fold it. */
+.sheet.player { top: 0; overflow-y: auto; overscroll-behavior: contain; display: block; padding-bottom: calc(40px + env(safe-area-inset-bottom)); }
+.player .drag-zone { touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
+.player .handle { margin-bottom: 4px; }
+.player .stage { display: block; text-align: center; padding: 8px 0 0; }
+.player .stone { width: min(48vw, 210px); margin: 0 auto; }
+.player h2 { font-size: 1.5rem; margin: 20px 0 2px; }
+.player .voices { margin-top: 26px; }
+.sheet.dragging { transition: none; }
+.sheet.over { z-index: 40; }
+.mini-inner { touch-action: none; transition: transform .25s var(--ease), opacity .25s var(--ease); }
+.mini-inner.dragging { transition: none; }
+.scrim.over { z-index: 35; }

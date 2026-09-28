@@ -67,30 +67,40 @@
     <p class="version">Pebbble</p>
 </div>
 
-<!-- Full player -->
-<div class="sheet player" id="player" role="dialog" aria-labelledby="pl-title">
-    <div class="top">
-        <button class="icon-btn" id="collapse" data-i18n-label="player.close"><svg class="icon" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
-        <span class="from" id="pl-from"></span>
-        <span style="width:44px"></span>
+<!-- The pebbble: stone, now playing, controls and its voices, in one sheet.
+     Drag it down to fold it into the mini player. -->
+<div class="sheet player" id="player" role="dialog" aria-labelledby="pl-name">
+    <div class="drag-zone" id="drag-zone">
+        <div class="handle"></div>
+        <div class="top">
+            <button class="icon-btn" id="collapse" data-i18n-label="player.close"><svg class="icon" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+            <span class="from" id="pl-name"></span>
+            <button class="icon-btn" id="open-menu" data-i18n-label="menu.label"><svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/></svg></button>
+        </div>
+        <div class="stage">
+            <div class="stone" id="pl-stone"></div>
+            <h2 class="serif" id="pl-title"></h2>
+            <div class="soft" id="pl-sub"></div>
+        </div>
     </div>
-    <div class="stage">
-        <div class="stone" id="pl-stone"></div>
-        <h2 class="serif" id="pl-title"></h2>
-        <div class="soft" id="pl-sub"></div>
+    <div id="controls">
+        <div class="progress" id="progress"><div class="track"></div><div class="fill" id="fill"></div><div class="dot" id="dot"></div></div>
+        <div class="times"><span id="t-now">0:00</span><span id="t-left">-0:00</span></div>
+        <div class="transport">
+            <button class="icon-btn" id="prev" data-i18n-label="player.prev"><svg class="icon" viewBox="0 0 24 24"><path d="M18 6L9 12l9 6z"/><path d="M6 6v12"/></svg></button>
+            <button class="play-big" id="play" data-i18n-label="player.play"></button>
+            <button class="icon-btn" id="next" data-i18n-label="player.next"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6l9 6-9 6z"/><path d="M18 6v12"/></svg></button>
+        </div>
+        <div class="modes">
+            <button class="mode" id="repeat"></button>
+            <button class="mode" id="sleep"></button>
+        </div>
+        <div class="sleep-choices" id="sleep-choices" hidden></div>
     </div>
-    <div class="progress" id="progress"><div class="track"></div><div class="fill" id="fill"></div><div class="dot" id="dot"></div></div>
-    <div class="times"><span id="t-now">0:00</span><span id="t-left">-0:00</span></div>
-    <div class="transport">
-        <button class="icon-btn" id="prev" data-i18n-label="player.prev"><svg class="icon" viewBox="0 0 24 24"><path d="M18 6L9 12l9 6z"/><path d="M6 6v12"/></svg></button>
-        <button class="play-big" id="play" data-i18n-label="player.play"></button>
-        <button class="icon-btn" id="next" data-i18n-label="player.next"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6l9 6-9 6z"/><path d="M18 6v12"/></svg></button>
-    </div>
-    <div class="modes">
-        <button class="mode" id="repeat"></button>
-        <button class="mode" id="sleep"></button>
-    </div>
-    <div class="sleep-choices" id="sleep-choices" hidden></div>
+    <p class="status inline" id="pl-status" hidden></p>
+    <ol class="voices" id="voices"></ol>
+    <p class="foot-note" id="pl-foot"></p>
+    <p class="saved-note" id="saved-note"></p>
 </div>
 
 <!-- Mini player -->

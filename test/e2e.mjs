@@ -102,9 +102,20 @@ await g.click('#repeat'); await g.click('#repeat');
 log('repeat:', await g.textContent('#repeat'));
 await g.click('#sleep'); await g.click('#sleep-choices button[data-m="-1"]');
 log('sleep:', await g.textContent('#sleep'));
-await g.click('#collapse');
+const dragDown = async pg => {
+  const z = await pg.$eval('#drag-zone .handle', el => { const r = el.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + 4 }; });
+  await pg.mouse.move(z.x, z.y); await pg.mouse.down();
+  for (let i = 1; i <= 10; i++) await pg.mouse.move(z.x, z.y + i * 25);
+  await pg.mouse.up();
+};
+await dragDown(g);
 await on(g, 'mini');
-log('mini player:', await g.textContent('#mini-title'), '| menu on a not-owned phone offers:', await (async () => { await g.click('#open-menu'); await on(g, 'menu-sheet'); return g.$$eval('#menu-sheet .menu-row:not([hidden]) b', b => b.map(x => x.textContent)); })());
+log('dragged down → mini player:', await g.textContent('#mini-title'), '| sheet open:', await g.$eval('#player', e => e.classList.contains('on')));
+await g.click('#mini-title');
+await on(g, 'player');
+await g.click('#open-menu'); await on(g, 'menu-sheet');
+log('menu over the sheet, on a not-owned phone offers:', await g.$$eval('#menu-sheet .menu-row:not([hidden]) b', b => b.map(x => x.textContent)), '| sheet still under it:', await g.$eval('#player', e => e.classList.contains('on')));
+await g.click('#scrim', { position: { x: 20, y: 20 } });
 
 // ---------- Player on an OWNED phone ----------
 const ownCtx = await browser.newContext({ locale: 'en-US' });
@@ -133,11 +144,10 @@ await o.waitForSelector('#shelf button');
 if (process.env.SHOTS) await o.screenshot({ path: process.env.SHOTS + '/library.png' });
 log('offline library:', await o.$$eval('#shelf button', r => r.map(x => x.innerText.replace(/\s*\n\s*/g, ' | '))));
 await o.click('#shelf button');
-log('offline from library:', await playing(o), '|', await o.$eval('.status.inline', e => e.textContent).catch(() => 'no offline note'));
+log('offline from library:', await playing(o), '|', await o.textContent('#pl-status'));
 await ownCtx.setOffline(false);
 
 // Language
-await o.click('#collapse');
 await o.click('#open-menu'); await on(o, 'menu-sheet'); await o.click('#m-settings'); await on(o, 'settings-sheet');
 await o.click('#langs button[data-lang="fr"]');
 await o.waitForFunction(() => document.getElementById('settings-title').textContent === 'Réglages');
@@ -167,8 +177,23 @@ const g2 = await guestCtx.newPage();
 await g2.goto(url); await g2.click('#listen');
 await unlockWith(g2, 'caillou');
 await playing(g2);
-await g2.click('#collapse');
 log('voices now', (await voices(g2)).length, '(device question remembered: yes)');
+// Swipe the mini player sideways to change voice
+await g2.click('#collapse'); await on(g2, 'mini');
+const swipe = async (pg, dx) => {
+  const b = await pg.$eval('#mini-open', el => { const r = el.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
+  await pg.mouse.move(b.x, b.y); await pg.mouse.down();
+  for (let i = 1; i <= 10; i++) await pg.mouse.move(b.x + dx * i / 10, b.y);
+  await pg.mouse.up();
+};
+const t1 = await g2.textContent('#mini-title');
+await swipe(g2, -160);
+await g2.waitForFunction(t => document.getElementById('mini-title').textContent !== t, t1);
+log('swipe left on mini:', t1, '→', await g2.textContent('#mini-title'));
+await swipe(g2, 160);
+await g2.waitForFunction(t => document.getElementById('mini-title').textContent === t, t1);
+log('swipe right on mini: back to', await g2.textContent('#mini-title'));
+await g2.click('#mini-title'); await on(g2, 'player');
 
 // My pebbbles: listed on this phone after saving
 await page.click('#done .back');
@@ -182,7 +207,6 @@ await mine.click('#listen');
 await on(mine, 'device-sheet'); await mine.click('#device-yes');
 await unlockWith(mine, 'caillou');
 await playing(mine);
-await mine.click('#collapse');
 await mine.click('#open-menu'); await on(mine, 'menu-sheet');
 log('menu on creator phone:', await mine.$$eval('#menu-sheet .menu-row:not([hidden]) b', b => b.map(x => x.textContent)));
 await mine.click('#m-edit');
@@ -226,7 +250,6 @@ await own2.fill('#pw', 'galet'); await own2.click('#unlock');
 log('old password refused, new one opens:', await playing(own2));
 
 // Forget on the owned phone
-await own2.click('#collapse');
 await own2.click('#open-menu'); await on(own2, 'menu-sheet');
 await own2.click('#m-forget'); await own2.click('#m-forget');
 await own2.waitForSelector('.empty');
