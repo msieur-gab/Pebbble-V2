@@ -130,3 +130,21 @@ test('password: change and remove without touching the audio', async () => {
     assert.equal(h.pw, undefined);
     assert.deepEqual(await F.openTrack(tr.sealed, id, f, await F.trackKey(h.tracks[0], id)), audio);
 });
+
+test('password: forgiving about capitals, spaces and accents, exact about symbols and digits', async () => {
+    const { id } = F.newPebbble();
+    const h = F.newHeader({});
+    await F.setPassword(h, id, '78@szx86 Rivière', 'hint');
+    for (const ok of ['78@szx86 rivière', '78@SZX86 RIVIERE', '  78@szx86   riviere ', '78@Szx86 Riviere']) await F.unlock(h, id, ok);
+    assert.equal(F.relaxPassword('Año Niño Çà Über'), 'ano nino ca uber');
+    assert.equal(F.relaxPassword('Straße'), 'straße');
+    for (const bad of ['78szx86 riviere', '78@szx87 riviere', '78-szx-86 riviere']) await assert.rejects(F.unlock(h, id, bad), /wrong-password/);
+
+    // A pebbble locked before this change (no 'relaxed' flag) keeps matching exactly.
+    // 'caillou' is already in relaxed form, so dropping the flag reproduces an old lock.
+    const old = F.newHeader({});
+    await F.setPassword(old, id, 'caillou');
+    delete old.pw.relaxed;
+    await F.unlock(old, id, 'caillou');
+    await assert.rejects(F.unlock(old, id, 'Caillou'), /wrong-password/);
+});

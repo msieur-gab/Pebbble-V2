@@ -144,6 +144,19 @@ export async function trackKey(track, id, pwKey) {
 
 // ---------- password ----------
 
+/**
+ * Forgiving form of a password: capitals, spaces around and doubled inside, and accents
+ * on Latin letters don't matter ("Rivière " = "riviere"). Symbols and digits stay exact.
+ */
+export function relaxPassword(password) {
+    return password.normalize('NFD')
+        .replace(/(\p{Script=Latin})\p{M}+/gu, '$1')
+        .normalize('NFC')
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, ' ');
+}
+
 async function derivePwKey(password, salt, rounds) {
     const base = await subtle.importKey('raw', te.encode(password.normalize('NFC')), 'PBKDF2', false, ['deriveBits']);
     const bits = await subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: rounds }, base, 256);
@@ -154,8 +167,9 @@ async function derivePwKey(password, salt, rounds) {
 export async function setPassword(header, id, password, hint = '') {
     if (header.pw) throw new Error('already-protected');
     const salt = randomBytes(16);
-    const pwKey = await derivePwKey(password, salt, PBKDF2_ROUNDS);
+    const pwKey = await derivePwKey(relaxPassword(password), salt, PBKDF2_ROUNDS);
     header.pw = {
+        relaxed: true, // older pebbbles lack this and keep exact matching
         salt: b64u.enc(salt),
         rounds: PBKDF2_ROUNDS,
         check: b64u.enc(await seal(pwKey, te.encode('ok'), checkAad(id))),
@@ -196,8 +210,8 @@ export async function pwKeyStillValid(header, id, pwKey) {
 
 /** Returns pwKey, or throws 'wrong-password'. */
 export async function unlock(header, id, password) {
-    const { salt, rounds, check } = header.pw;
-    const pwKey = await derivePwKey(password, b64u.dec(salt), rounds);
+    const { salt, rounds, check, relaxed } = header.pw;
+    const pwKey = await derivePwKey(relaxed ? relaxPassword(password) : password, b64u.dec(salt), rounds);
     try {
         await open(pwKey, b64u.dec(check), checkAad(id));
     } catch {

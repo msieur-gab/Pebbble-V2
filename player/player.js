@@ -19,7 +19,7 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '
 const mmss = s => (isFinite(s) ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}` : '0:00');
 const stone = (seed, detail = 'full') => pebbleCover(seed, { detail });
 const audio = $('audio');
-const VERSION = '2026-09-28 · 14:40'; // shown in Settings, to tell which version a phone runs
+const VERSION = '2026-09-28 · 15:15'; // shown in Settings, to tell which version a phone runs
 
 const ICON = {
     play: '<svg class="icon" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>',
