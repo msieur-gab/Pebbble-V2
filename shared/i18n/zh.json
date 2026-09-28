@@ -1,0 +1,55 @@
+{
+  "player": {
+    "tap": "将你的石头靠近手机即可打开。",
+    "iphoneHint": "iPhone：保持屏幕解锁，将石头靠近手机顶部，然后点击通知。",
+    "opening": "正在打开你的石头…",
+    "empty": "这颗石头还没有消息。",
+    "cannotOpen": "无法打开这颗石头。",
+    "offline": "离线 — 显示已保存的版本。",
+    "play": "播放",
+    "couldNotPlay": "无法播放“{title}”。"
+  },
+  "owner": {
+    "belongsTo": "这颗石头属于",
+    "someone": "某人",
+    "contact": "如果你捡到了它，请联系"
+  },
+  "lock": {
+    "hint": "提示：",
+    "noHint": "（无提示）",
+    "password": "密码",
+    "open": "打开",
+    "wrong": "不太对。再看看提示。"
+  },
+  "device": {
+    "question": "这是我的个人设备",
+    "yes": "是",
+    "no": "否",
+    "textPersonal": "声音将安全保存在你的设备上。随时收听，离线也可以。",
+    "textGuest": "声音将播放一次，不留痕迹。随时再次扫描你的石头即可重新聆听。",
+    "continue": "继续",
+    "owned": "我的设备",
+    "guest": "共享设备"
+  },
+  "library": {
+    "title": "你的石头",
+    "count": "{count} 条消息",
+    "forget": "移除",
+    "forgetConfirm": "要从此设备移除这颗石头及其消息吗？",
+    "saving": "正在离线保存（{done}/{total}）…",
+    "saved": "已保存供离线使用"
+  },
+  "dateLock": {
+    "availableOn": "{date} 可用",
+    "availableUntil": "可用至 {date}",
+    "expired": "已过期"
+  },
+  "settings": {
+    "title": "设置",
+    "language": "语言",
+    "deviceMode": "设备模式",
+    "clearData": "清除已保存的消息",
+    "clearConfirm": "确定吗？这将删除所有已保存的消息。",
+    "dataCleared": "数据已清除"
+  }
+}

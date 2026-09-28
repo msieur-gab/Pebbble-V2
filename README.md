@@ -27,15 +27,17 @@ Storage (Cloudflare R2) only ever holds encrypted files:
 - **Password (optional)**: track keys are wrapped a second time with a key derived from the password (PBKDF2-SHA256, 600,000 rounds). The hint stays readable.
 - **Date windows**: one-off (`2026-12-24 → 2026-12-26`) or every year (`12-20..12-27`, may wrap the new year). This is about discovery, not security: it follows the phone's clock.
 - **Adding messages later**: new audio is uploaded and the header rewritten. The stone is never rewritten.
+- **Owned or not-owned device**: asked once on each phone. *Owned* keeps the header, keys and audio in IndexedDB, so the pebbble opens offline and without retyping the password, and the player lists saved pebbbles when opened without a tap. *Not-owned* stores nothing; it's all gone when the page closes. Switching to not-owned wipes the device. The offline cache only holds the app's own files, never pebbble content.
+- **Languages**: English, French, Spanish, Chinese (`shared/i18n/`), detected from the phone and changeable in settings.
 
 All of this lives in [`shared/format.js`](shared/format.js), which both apps import.
 
 ## Layout
 
 ```
-shared/   format.js (crypto + format), r2.js (storage), config.js, base.css
+shared/   format.js (crypto + format), r2.js (storage), i18n.js + i18n/, config.js, base.css
 writer/   make and edit pebbbles — Android Chrome for NFC; any browser with a pasted link
-player/   open and play — any phone
+player/   open and play — any phone; library.js (owned-device storage), sw.js (offline app shell)
 test/     unit tests, a local stand-in for R2, an end-to-end browser test
 ```
 
@@ -86,6 +88,6 @@ The player's address is written onto every stone and can't change afterwards. `g
 
 ## Not in this core yet
 
-- Owned-device offline library. The player currently keeps everything in memory, which is the not-owned behaviour.
-- Full player UI from v1 (Lit components, sleep timer, i18n).
+- Full player UI from v1 (Lit components, sleep timer), after the calmer redesign.
+- Tap-to-edit with a separate edit key, and a "my pebbbles" library in the writer.
 - Tag locking, and re-sealing v1 stones.

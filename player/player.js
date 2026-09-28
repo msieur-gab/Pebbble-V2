@@ -1,11 +1,21 @@
-// Minimal v2 player. Everything stays in memory (not-owned device behaviour);
-// the owned-device offline library comes over from the current player later.
+// Pebbble v2 player.
+// Not-owned device: everything lives in memory and is gone when the page closes.
+// Owned device: header, keys and audio are kept in IndexedDB for offline listening.
 import * as F from '../shared/format.js';
 import * as R2 from '../shared/r2.js';
+import * as L from './library.js';
 import { config } from '../shared/config.js';
+import { initI18n, setLanguage, language, LANGUAGES, t } from '../shared/i18n.js';
 
 const $ = id => document.getElementById(id);
-let p = null, header = null, pwKey = null, currentUrl = null;
+const SCREENS = ['empty', 'library', 'owner', 'device', 'lock', 'list'];
+
+// Current pebbble
+let p = null, header = null, sealedHeader = null, pwKey = null, currentUrl = null;
+
+function screens(...visible) {
+    for (const id of SCREENS) $(id).hidden = !visible.includes(id);
+}
 
 function status(text) {
     $('status').hidden = !text;
@@ -19,96 +29,228 @@ function takeFragment() {
     return found;
 }
 
+// ---------- home: nothing tapped ----------
+
+async function home() {
+    p = header = null;
+    status('');
+    const saved = L.isOwned() ? await L.listPebbbles() : [];
+    if (!saved.length) { screens('empty'); return; }
+    screens('library');
+    $('lib-list').replaceChildren(...saved.sort((a, b) => b.savedAt - a.savedAt).map(rec => {
+        const row = document.createElement('div');
+        row.className = 'track';
+        row.innerHTML = '<div><div class="title"></div><div class="muted"></div></div><div class="row"><button type="button" class="quiet"></button><button type="button"></button></div>';
+        row.querySelector('.title').textContent = rec.name || t('owner.someone');
+        row.querySelector('.muted').textContent = t('library.count', { count: rec.count });
+        const [forget, open] = row.querySelectorAll('button');
+        forget.textContent = t('library.forget');
+        forget.onclick = async () => { if (confirm(t('library.forgetConfirm'))) { await L.forget(rec.id); home(); } };
+        open.textContent = t('player.play');
+        open.onclick = () => load({ id: rec.id, key: rec.key });
+        return row;
+    }));
+}
+
+// ---------- opening a pebbble ----------
+
 async function load(found) {
-    p = found; header = null; pwKey = null;
-    $('empty').hidden = true;
-    for (const id of ['owner', 'lock', 'list']) $(id).hidden = true;
-    status('Opening your pebbble…');
+    p = found; header = null; sealedHeader = null; pwKey = null;
+    screens();
+    status(t('player.opening'));
+
+    const cached = L.isOwned() ? await L.getPebbble(p.id) : null;
+    const usable = cached && cached.key === p.key ? cached : null; // a rewritten stone brings a new key
+
+    let offline = false;
     try {
-        const sealed = await R2.get(config.publicBase, `${p.id}/header`, { fresh: true });
-        if (!sealed) throw new Error('This pebbble has no messages yet.');
-        header = await F.openHeader(sealed, p);
-    } catch (e) {
-        status(e.message === 'decrypt-failed' ? 'This stone could not be opened.' : e.message);
+        sealedHeader = await R2.get(config.publicBase, `${p.id}/header`, { fresh: true });
+        if (!sealedHeader) { status(t('player.empty')); return; }
+    } catch {
+        if (!usable) { status(t('player.cannotOpen')); return; }
+        sealedHeader = usable.header;
+        offline = true;
+    }
+    try {
+        header = await F.openHeader(sealedHeader, p);
+    } catch {
+        status(t('player.cannotOpen'));
         return;
     }
-    status('');
+    if (usable?.pwKey && header.pw) pwKey = usable.pwKey;
+
+    status(offline ? t('player.offline') : '');
     renderOwner();
-    if (header.pw) {
-        $('hint').textContent = header.hint || '(no hint)';
-        $('lock').hidden = false;
-    } else {
-        renderTracks();
+    if (!L.getMode()) askDevice();
+    else next();
+}
+
+function next() {
+    if (header.pw && !pwKey) {
+        $('hint').textContent = header.hint || t('lock.noHint');
+        screens('owner', 'lock');
+        return;
     }
+    screens('owner', 'list');
+    renderTracks();
+    if (L.isOwned()) keep();
 }
 
 function renderOwner() {
     const { name, contact } = header.owner;
-    $('owner').hidden = !name && !contact;
-    $('owner-name').textContent = name || 'someone';
+    $('owner-name').textContent = name || t('owner.someone');
     $('owner-contact').textContent = contact;
     $('owner-contact-line').hidden = !contact;
 }
+
+// ---------- device question (asked once) ----------
+
+let choice = null;
+function askDevice() {
+    choice = null;
+    $('device-text').textContent = '';
+    $('device-continue').disabled = true;
+    for (const b of [$('device-yes'), $('device-no')]) b.classList.add('quiet');
+    screens('owner', 'device');
+}
+function pick(owned) {
+    choice = owned ? 'owned' : 'guest';
+    $('device-yes').classList.toggle('quiet', !owned);
+    $('device-no').classList.toggle('quiet', owned);
+    $('device-text').textContent = t(owned ? 'device.textPersonal' : 'device.textGuest');
+    $('device-continue').disabled = false;
+}
+$('device-yes').onclick = () => pick(true);
+$('device-no').onclick = () => pick(false);
+$('device-continue').onclick = async () => {
+    await L.setMode(choice);
+    $('mode').value = choice;
+    next();
+};
+
+// ---------- password ----------
 
 $('unlock').onclick = async () => {
     $('lock-msg').textContent = '';
     try {
         pwKey = await F.unlock(header, p.id, $('pw').value);
     } catch {
-        $('lock-msg').textContent = 'Not quite. Look at the hint again.';
+        $('lock-msg').textContent = t('lock.wrong');
         return;
     }
-    $('lock').hidden = true;
     $('pw').value = '';
-    renderTracks();
+    next();
 };
 
-const fmt = d => d.toLocaleDateString(undefined, { day: 'numeric', month: 'long' });
+// ---------- tracks ----------
+
+const fmt = d => d.toLocaleDateString(language(), { day: 'numeric', month: 'long' });
 
 function renderTracks() {
-    $('list').hidden = false;
-    $('tracks').replaceChildren(...header.tracks.map(t => {
-        const w = F.windowStatus(t.window);
+    $('tracks').replaceChildren(...header.tracks.map(tr => {
+        const w = F.windowStatus(tr.window);
         const row = document.createElement('div');
         row.className = 'track';
         row.innerHTML = '<div><div class="title"></div><div class="muted"></div></div>';
-        row.querySelector('.title').textContent = t.title;
+        row.querySelector('.title').textContent = tr.title;
         const note = row.querySelector('.muted');
         if (w.state === 'open') {
-            note.textContent = w.closes ? `Until ${fmt(w.closes)}` : '';
+            note.textContent = w.closes ? t('dateLock.availableUntil', { date: fmt(w.closes) }) : '';
             const btn = document.createElement('button');
-            btn.textContent = 'Play';
-            btn.onclick = () => play(t, btn);
+            btn.type = 'button';
+            btn.textContent = t('player.play');
+            btn.onclick = () => play(tr, btn);
             row.append(btn);
         } else {
-            note.textContent = w.state === 'locked' ? `Opens on ${fmt(w.opens)}` : 'This message has passed';
+            note.textContent = w.state === 'locked' ? t('dateLock.availableOn', { date: fmt(w.opens) }) : t('dateLock.expired');
         }
         return row;
     }));
-    if (!header.tracks.length) $('tracks').innerHTML = '<p class="muted">No messages yet.</p>';
+    if (!header.tracks.length) $('tracks').innerHTML = `<p class="muted">${t('player.empty')}</p>`;
 }
 
-async function play(t, btn) {
+async function play(tr, btn) {
     btn.disabled = true;
+    const label = btn.textContent;
     btn.textContent = '…';
     try {
-        const sealed = await R2.get(config.publicBase, `${p.id}/${t.f}`);
-        const audio = await F.openTrack(sealed, p.id, t.f, await F.trackKey(t, p.id, pwKey));
+        const path = `${p.id}/${tr.f}`;
+        let sealed = L.isOwned() ? await L.getFile(path) : null;
+        sealed ??= await R2.get(config.publicBase, path);
+        const audio = await F.openTrack(sealed, p.id, tr.f, await F.trackKey(tr, p.id, pwKey));
         if (currentUrl) URL.revokeObjectURL(currentUrl);
-        currentUrl = URL.createObjectURL(new Blob([audio], { type: t.type }));
+        currentUrl = URL.createObjectURL(new Blob([audio], { type: tr.type }));
         $('audio').src = currentUrl;
         $('audio').hidden = false;
         await $('audio').play();
-    } catch (e) {
-        status(`Could not play “${t.title}”.`);
+    } catch {
+        status(t('player.couldNotPlay', { title: tr.title }));
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Play';
+        btn.textContent = label;
     }
 }
+
+// ---------- owned device: keep everything for offline ----------
+
+async function keep() {
+    const id = p.id;
+    await L.putPebbble({ id, key: p.key, pwKey, header: sealedHeader, name: header.owner.name, count: header.tracks.length, savedAt: Date.now() });
+
+    // All tracks, including ones not open yet, so a Christmas message still opens offline.
+    const wanted = header.tracks.map(tr => `${id}/${tr.f}`);
+    const note = $('saved-note');
+    note.hidden = false;
+    let done = 0;
+    for (const path of wanted) {
+        if (!(await L.getFile(path))) {
+            note.textContent = t('library.saving', { done, total: wanted.length });
+            try { await L.putFile(path, await R2.get(config.publicBase, path)); } catch { note.hidden = true; return; }
+        }
+        done++;
+    }
+    for (const path of await L.filePaths(id)) if (!wanted.includes(path)) await L.deleteFile(path);
+    if (p?.id === id) note.textContent = t('library.saved');
+}
+
+// ---------- settings ----------
+
+$('lang').replaceChildren(...Object.entries(LANGUAGES).map(([code, name]) => new Option(name, code)));
+$('lang').onchange = async () => {
+    await setLanguage($('lang').value);
+    if (header && !$('list').hidden) renderTracks();
+    else if (!$('library').hidden) home();
+    if (!$('device').hidden && choice) pick(choice === 'owned');
+};
+
+$('mode').onchange = async () => {
+    const mode = $('mode').value;
+    if (mode === 'guest' && L.isOwned() && !confirm(t('settings.clearConfirm'))) { $('mode').value = 'owned'; return; }
+    await L.setMode(mode);
+    $('saved-note').hidden = true;
+    if (mode === 'owned' && header && !$('list').hidden) keep();
+    if (!header) home();
+};
+
+$('clear').onclick = async () => {
+    if (!confirm(t('settings.clearConfirm'))) return;
+    await L.clearAll();
+    $('settings-msg').textContent = t('settings.dataCleared');
+    $('saved-note').hidden = true;
+    if (!header) home();
+};
+
+// ---------- start ----------
 
 // A new tap while the page is open changes only the hash.
 window.addEventListener('hashchange', () => { const f = takeFragment(); if (f) load(f); });
 
+navigator.serviceWorker?.register('sw.js').catch(() => {});
+
+await initI18n();
+$('lang').value = language();
+$('mode').value = L.getMode() || '';
+
 const first = takeFragment();
 if (first) load(first);
+else home();

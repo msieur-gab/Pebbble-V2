@@ -109,7 +109,9 @@ $('t-rec').onclick = async () => {
     if (recorder) { recorder.stop(); return; }
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     const chunks = [];
-    recorder = new MediaRecorder(stream);
+    // Prefer AAC in MP4 (plays everywhere, including iPhone); fall back to the browser's default.
+    const mimeType = ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4'].find(m => MediaRecorder.isTypeSupported(m));
+    recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
     recorder.ondataavailable = e => chunks.push(e.data);
     recorder.onstop = () => {
         stream.getTracks().forEach(t => t.stop());

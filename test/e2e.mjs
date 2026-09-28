@@ -45,22 +45,78 @@ const id = new URL(url).hash.slice(1).split('.')[0];
 const files = readdirSync(`.dev-bucket/${id}`);
 log('stored files', files.length, files.every(f => !readFileSync(`.dev-bucket/${id}/${f}`).includes('RIFF')) ? 'all encrypted' : 'PLAINTEXT FOUND');
 
-// Player
-const pl = await browser.newPage(); pl.on('pageerror', e => errors.push(e.message));
-await pl.goto(url);
-await pl.waitForSelector('#lock:not([hidden])');
-log('address after open', pl.url());
-log('owner', await pl.textContent('#owner-name'), '/', await pl.textContent('#owner-contact'), '| hint:', await pl.textContent('#hint'));
-await pl.fill('#pw', 'wrong'); await pl.click('#unlock');
-await pl.waitForFunction(() => document.getElementById('lock-msg').textContent);
-log('wrong password →', await pl.textContent('#lock-msg'));
-await pl.fill('#pw', 'caillou'); await pl.click('#unlock');
-await pl.waitForSelector('#list:not([hidden])');
-const rows = await pl.$$eval('.track', r => r.map(x => x.innerText.replace(/\n/g, ' | ')));
-log('tracks', rows);
-await pl.click('.track button');
-await pl.waitForFunction(() => { const a = document.getElementById('audio'); return a.duration > 0; }, null, { timeout: 10000 });
-log('played duration', await pl.$eval('#audio', a => a.duration.toFixed(2)), 's');
+const idbCount = pg => pg.evaluate(() => new Promise(res => {
+  const q = indexedDB.open('pebbble-v2', 1);
+  q.onupgradeneeded = () => { q.transaction.abort(); res({ pebbbles: 0, files: 0 }); };
+  q.onsuccess = () => { const d = q.result; const tx = d.transaction(['pebbbles', 'files']); const out = {};
+    tx.objectStore('pebbbles').count().onsuccess = e => out.pebbbles = e.target.result;
+    tx.objectStore('files').count().onsuccess = e => out.files = e.target.result;
+    tx.oncomplete = () => { d.close(); res(out); }; };
+  q.onerror = () => res({ pebbbles: 0, files: 0 });
+}));
+const unlockAndList = async pg => {
+  await pg.fill('#pw', 'wrong'); await pg.click('#unlock');
+  await pg.waitForFunction(() => document.getElementById('lock-msg').textContent);
+  const wrong = await pg.textContent('#lock-msg');
+  await pg.fill('#pw', 'caillou'); await pg.click('#unlock');
+  await pg.waitForSelector('#list:not([hidden])');
+  return wrong;
+};
+const playFirst = async pg => {
+  await pg.click('#tracks .track button');
+  await pg.waitForFunction(() => document.getElementById('audio').duration > 0, null, { timeout: 10000 });
+  return (await pg.$eval('#audio', a => a.duration)).toFixed(2);
+};
+
+// Player on a NOT-owned device
+const guestCtx = await browser.newContext({ locale: 'en-US' });
+const g = await guestCtx.newPage(); g.on('pageerror', e => errors.push(e.message));
+await g.goto(url);
+await g.waitForSelector('#device:not([hidden])');
+log('address after open', g.url());
+log('owner', await g.textContent('#owner-name'), '/', await g.textContent('#owner-contact'));
+await g.click('#device-no');
+log('not-owned text:', await g.textContent('#device-text'));
+await g.click('#device-continue');
+await g.waitForSelector('#lock:not([hidden])');
+log('hint', await g.textContent('#hint'), '| wrong password →', await unlockAndList(g));
+log('tracks', await g.$$eval('#tracks .track', r => r.map(x => x.innerText.replace(/\n/g, ' | '))));
+log('played', await playFirst(g), 's');
+log('NOT-OWNED stored on device', await idbCount(g), '| cached pebbble files:', await g.evaluate(async () => { let n = 0; for (const k of await caches.keys()) for (const r of await (await caches.open(k)).keys()) if (r.url.includes('/bucket/')) n++; return n; }));
+
+// Player on an OWNED device
+const ownCtx = await browser.newContext({ locale: 'en-US' });
+const o = await ownCtx.newPage(); o.on('pageerror', e => errors.push(e.message));
+await o.goto(url);
+await o.waitForSelector('#device:not([hidden])');
+await o.click('#device-yes'); await o.click('#device-continue');
+await o.waitForSelector('#lock:not([hidden])');
+await unlockAndList(o);
+await o.waitForFunction(() => document.getElementById('saved-note').textContent === 'Saved for offline', null, { timeout: 15000 });
+log('OWNED stored on device', await idbCount(o), '→', await o.textContent('#saved-note'));
+await o.evaluate(() => navigator.serviceWorker.ready);
+
+// Offline: open the player with no tap, pick from the library, play without the password
+await ownCtx.setOffline(true);
+await o.goto(base + '/player/');
+await o.waitForSelector('#library:not([hidden])');
+log('offline library', await o.$$eval('#lib-list .track', r => r.map(x => x.innerText.replace(/\n/g, ' | '))));
+await o.click('#lib-list .track button:last-child');
+await o.waitForSelector('#list:not([hidden])');
+log('offline status:', await o.textContent('#status'), '| played', await playFirst(o), 's (no password asked)');
+await ownCtx.setOffline(false);
+
+// Language switch
+await o.click('#settings summary');
+await o.selectOption('#lang', 'fr');
+await o.waitForFunction(() => document.querySelector('#tracks .track button')?.textContent === 'Écouter');
+log('in French:', await o.$eval('#tracks .track', r => r.innerText.replace(/\n/g, ' | ')), '|', await o.textContent('#settings summary'));
+
+// Switching to not-owned wipes the device
+o.once('dialog', d => d.accept());
+await o.selectOption('#mode', 'guest');
+await o.waitForTimeout(300);
+log('after switching to not-owned', await idbCount(o));
 
 // Writer: reopen by link, unlock, add a message, save — stone keeps its link
 await page.goto(base + '/writer/');
@@ -73,9 +129,11 @@ await page.click('#save');
 await page.waitForSelector('#done:not([hidden])');
 log('same link after edit', (await page.textContent('#done-url')) === url);
 
-const pl2 = await browser.newPage();
-await pl2.goto(url); await pl2.fill('#pw', 'caillou'); await pl2.click('#unlock');
-await pl2.waitForSelector('#list:not([hidden])');
-log('tracks now', await pl2.$$eval('.track', r => r.length));
+const g2 = await guestCtx.newPage();
+await g2.goto(url);
+await g2.waitForSelector('#lock:not([hidden])');
+await g2.fill('#pw', 'caillou'); await g2.click('#unlock');
+await g2.waitForSelector('#list:not([hidden])');
+log('tracks now', await g2.$$eval('#tracks .track', r => r.length), '(device question remembered:', !(await g2.isVisible('#device')), ')');
 log('page errors', errors.length ? errors : 'none');
 await browser.close();

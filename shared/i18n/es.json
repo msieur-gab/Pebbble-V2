@@ -1,0 +1,55 @@
+{
+  "player": {
+    "tap": "Acerca tu pebbble al teléfono para abrirlo.",
+    "iphoneHint": "iPhone: mantén la pantalla desbloqueada, acerca la piedra a la parte superior del teléfono y toca la notificación.",
+    "opening": "Abriendo tu pebbble…",
+    "empty": "Este pebbble aún no tiene mensajes.",
+    "cannotOpen": "No se pudo abrir esta piedra.",
+    "offline": "Sin conexión — versión guardada.",
+    "play": "Escuchar",
+    "couldNotPlay": "No se pudo reproducir «{title}»."
+  },
+  "owner": {
+    "belongsTo": "Este pebbble pertenece a",
+    "someone": "alguien",
+    "contact": "Si lo encontraste, por favor contacta"
+  },
+  "lock": {
+    "hint": "Pista:",
+    "noHint": "(sin pista)",
+    "password": "Contraseña",
+    "open": "Abrir",
+    "wrong": "No exactamente. Mira la pista otra vez."
+  },
+  "device": {
+    "question": "Este es mi dispositivo personal",
+    "yes": "Sí",
+    "no": "No",
+    "textPersonal": "Las voces se guardarán de forma segura en tu dispositivo. Escucha cuando quieras, incluso sin conexión.",
+    "textGuest": "Las voces se reproducirán una vez, sin dejar rastro. Escanea tu piedra nuevamente cuando quieras escuchar de nuevo.",
+    "continue": "Continuar",
+    "owned": "Mi dispositivo",
+    "guest": "Dispositivo compartido"
+  },
+  "library": {
+    "title": "Tus pebbbles",
+    "count": "{count} mensajes",
+    "forget": "Olvidar",
+    "forgetConfirm": "¿Quitar este pebbble y sus mensajes de este dispositivo?",
+    "saving": "Guardando sin conexión ({done}/{total})…",
+    "saved": "Guardado sin conexión"
+  },
+  "dateLock": {
+    "availableOn": "Disponible el {date}",
+    "availableUntil": "Disponible hasta {date}",
+    "expired": "Ya no disponible"
+  },
+  "settings": {
+    "title": "Configuración",
+    "language": "Idioma",
+    "deviceMode": "Modo de dispositivo",
+    "clearData": "Borrar mensajes guardados",
+    "clearConfirm": "¿Estás seguro? Esto eliminará todos los mensajes guardados.",
+    "dataCleared": "Datos borrados"
+  }
+}

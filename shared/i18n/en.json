@@ -1,0 +1,55 @@
+{
+  "player": {
+    "tap": "Tap your pebbble with the phone to open it.",
+    "iphoneHint": "iPhone: keep the screen unlocked, hold the stone near the top of the phone, then tap the notification.",
+    "opening": "Opening your pebbble…",
+    "empty": "This pebbble has no messages yet.",
+    "cannotOpen": "This stone could not be opened.",
+    "offline": "Offline — showing the saved version.",
+    "play": "Play",
+    "couldNotPlay": "Could not play “{title}”."
+  },
+  "owner": {
+    "belongsTo": "This pebbble belongs to",
+    "someone": "someone",
+    "contact": "If you found it, please contact"
+  },
+  "lock": {
+    "hint": "Hint:",
+    "noHint": "(no hint)",
+    "password": "Password",
+    "open": "Open",
+    "wrong": "Not quite. Look at the hint again."
+  },
+  "device": {
+    "question": "This is my personal device",
+    "yes": "Yes",
+    "no": "No",
+    "textPersonal": "The voices will be securely saved on your device. Listen anytime, even offline.",
+    "textGuest": "The voices will play once, leaving no trace. Scan your stone again anytime to listen once more.",
+    "continue": "Continue",
+    "owned": "My Device",
+    "guest": "Shared Device"
+  },
+  "library": {
+    "title": "Your pebbbles",
+    "count": "{count} messages",
+    "forget": "Forget",
+    "forgetConfirm": "Remove this pebbble and its messages from this device?",
+    "saving": "Saving for offline ({done}/{total})…",
+    "saved": "Saved for offline"
+  },
+  "dateLock": {
+    "availableOn": "Available on {date}",
+    "availableUntil": "Available until {date}",
+    "expired": "No longer available"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "deviceMode": "Device Mode",
+    "clearData": "Clear saved messages",
+    "clearConfirm": "Are you sure? This will remove all saved messages.",
+    "dataCleared": "All data cleared"
+  }
+}

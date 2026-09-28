@@ -4,38 +4,71 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="referrer" content="no-referrer">
+    <meta name="theme-color" content="#f7f5f0">
     <title>Pebbble</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
     <link rel="stylesheet" href="../shared/base.css">
-    <link rel="icon" href="data:,">
 </head>
 <body>
 <main>
     <h1>Pebbble</h1>
 
-    <section id="empty">
-        <p>Tap your pebbble with the phone to open it.</p>
-        <p class="muted">iPhone: keep the screen unlocked, hold the stone near the top of the phone, then tap the notification.</p>
+    <section id="empty" hidden>
+        <p data-i18n="player.tap"></p>
+        <p class="muted" data-i18n="player.iphoneHint"></p>
     </section>
 
     <p id="status" class="muted" hidden></p>
 
+    <section id="library" hidden>
+        <h2 data-i18n="library.title"></h2>
+        <div id="lib-list"></div>
+    </section>
+
     <section id="owner" hidden>
-        <p class="muted">This pebbble belongs to</p>
+        <p class="muted" data-i18n="owner.belongsTo"></p>
         <p><strong id="owner-name"></strong></p>
-        <p class="muted" id="owner-contact-line">If you found it, please contact <strong id="owner-contact"></strong></p>
+        <p class="muted" id="owner-contact-line"><span data-i18n="owner.contact"></span> <strong id="owner-contact"></strong></p>
+    </section>
+
+    <section id="device" hidden>
+        <p><strong data-i18n="device.question"></strong></p>
+        <div class="row">
+            <button type="button" class="quiet" id="device-no" data-i18n="device.no"></button>
+            <button type="button" class="quiet" id="device-yes" data-i18n="device.yes"></button>
+        </div>
+        <p class="muted" id="device-text"></p>
+        <button type="button" id="device-continue" data-i18n="device.continue" disabled></button>
     </section>
 
     <form id="lock" autocomplete="off" onsubmit="return false" hidden>
-        <p>Hint: <em id="hint"></em></p>
-        <label>Password <input id="pw" type="password" autocomplete="off"></label>
-        <button type="submit" id="unlock">Open</button>
+        <p><span data-i18n="lock.hint"></span> <em id="hint"></em></p>
+        <label><span data-i18n="lock.password"></span> <input id="pw" type="password" autocomplete="off" data-lpignore="true"></label>
+        <button type="submit" id="unlock" data-i18n="lock.open"></button>
         <p id="lock-msg" class="error"></p>
     </form>
 
     <section id="list" hidden>
         <div id="tracks"></div>
         <audio id="audio" controls hidden></audio>
+        <p id="saved-note" class="muted" hidden></p>
     </section>
+
+    <details id="settings">
+        <summary data-i18n="settings.title"></summary>
+        <label><span data-i18n="settings.language"></span> <select id="lang"></select></label>
+        <label><span data-i18n="settings.deviceMode"></span>
+            <select id="mode">
+                <option value="" hidden></option>
+                <option value="owned" data-i18n="device.owned"></option>
+                <option value="guest" data-i18n="device.guest"></option>
+            </select>
+        </label>
+        <button type="button" class="quiet" id="clear" data-i18n="settings.clearData"></button>
+        <p id="settings-msg" class="muted"></p>
+    </details>
 </main>
 <script type="module" src="player.js"></script>
 </body>

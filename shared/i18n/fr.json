@@ -1,0 +1,55 @@
+{
+  "player": {
+    "tap": "Approche ton pebbble du téléphone pour l’ouvrir.",
+    "iphoneHint": "iPhone : garde l’écran déverrouillé, approche la pierre du haut du téléphone, puis touche la notification.",
+    "opening": "Ouverture de ton pebbble…",
+    "empty": "Ce pebbble n’a pas encore de messages.",
+    "cannotOpen": "Cette pierre n’a pas pu être ouverte.",
+    "offline": "Hors ligne — version enregistrée.",
+    "play": "Écouter",
+    "couldNotPlay": "Impossible de lire « {title} »."
+  },
+  "owner": {
+    "belongsTo": "Ce pebbble appartient à",
+    "someone": "quelqu’un",
+    "contact": "Si tu l’as trouvé, merci de contacter"
+  },
+  "lock": {
+    "hint": "Indice :",
+    "noHint": "(pas d’indice)",
+    "password": "Mot de passe",
+    "open": "Ouvrir",
+    "wrong": "Pas tout à fait. Relis l’indice."
+  },
+  "device": {
+    "question": "Ceci est mon appareil personnel",
+    "yes": "Oui",
+    "no": "Non",
+    "textPersonal": "Les voix seront sauvegardées en toute sécurité sur ton appareil. Écoute quand tu veux, même hors ligne.",
+    "textGuest": "Les voix joueront une seule fois, sans laisser de trace. Scanne à nouveau ta pierre pour les réécouter.",
+    "continue": "Continuer",
+    "owned": "Mon appareil",
+    "guest": "Appareil partagé"
+  },
+  "library": {
+    "title": "Tes pebbbles",
+    "count": "{count} messages",
+    "forget": "Oublier",
+    "forgetConfirm": "Retirer ce pebbble et ses messages de cet appareil ?",
+    "saving": "Enregistrement hors ligne ({done}/{total})…",
+    "saved": "Sauvegardé hors ligne"
+  },
+  "dateLock": {
+    "availableOn": "Disponible le {date}",
+    "availableUntil": "Disponible jusqu'au {date}",
+    "expired": "Plus disponible"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "language": "Langue",
+    "deviceMode": "Mode appareil",
+    "clearData": "Supprimer les messages sauvegardés",
+    "clearConfirm": "Êtes-vous sûr ? Cela supprimera tous les messages sauvegardés.",
+    "dataCleared": "Données supprimées"
+  }
+}
