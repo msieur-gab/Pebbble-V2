@@ -91,6 +91,6 @@ The player's address is written onto every stone and can't change afterwards. `g
 
 ## Not in this core yet
 
-- Full player UI from v1 (Lit components, sleep timer), after the calmer redesign.
+- Full player UI, after the redesign: a clickable prototype of the player flow lives in [`prototype/`](prototype/) (pretend data, real stones).
 - Per-pebbble edit keys, checked by a small upload server (needed before others can create pebbbles).
 - Tag locking, and re-sealing v1 stones.
