@@ -251,7 +251,7 @@ $('clear').onclick = async () => {
 // A new tap while the page is open changes only the hash.
 window.addEventListener('hashchange', () => { const f = takeFragment(); if (f) load(f); });
 
-navigator.serviceWorker?.register('sw.js').catch(() => {});
+navigator.serviceWorker?.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 
 await initI18n();
 $('lang').value = language();

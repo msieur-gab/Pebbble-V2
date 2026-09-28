@@ -3,7 +3,7 @@
 // is cross-origin and is never touched here: on a not-owned device nothing about
 // a pebbble may be stored, and on an owned device IndexedDB holds it instead.
 
-const CACHE = 'pebbble-shell-v3';
+const CACHE = 'pebbble-shell-v4';
 const SHELL = [
     './', './player.js', './library.js', './manifest.json', './icons/icon-192.png',
     '../shared/format.js', '../shared/cover.js', '../shared/r2.js', '../shared/config.js', '../shared/i18n.js', '../shared/base.css',
@@ -11,7 +11,7 @@ const SHELL = [
 ];
 
 self.addEventListener('install', e => {
-    e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+    e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
@@ -20,13 +20,15 @@ self.addEventListener('activate', e => {
         .then(() => self.clients.claim()));
 });
 
-// Network first (updates arrive right away), cache as fallback when offline.
+// Network first, cache as fallback when offline. 'no-cache' makes the browser
+// revalidate with the server every time instead of reusing its own HTTP cache
+// (GitHub Pages marks files fresh for 10 minutes), so a new push shows up on the next load.
 self.addEventListener('fetch', e => {
     const url = new URL(e.request.url);
     // Never pebbble content: R2 is another origin; /bucket/ is the local dev stand-in.
     if (e.request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.includes('/bucket/')) return;
     e.respondWith(
-        fetch(e.request)
+        fetch(url.href, { cache: 'no-cache', credentials: 'same-origin' })
             .then(res => {
                 if (res.ok) {
                     const copy = res.clone();

@@ -107,7 +107,7 @@ await ownCtx.setOffline(true);
 await o.goto(base + '/player/');
 await o.waitForSelector('#library:not([hidden])');
 log('offline library', await o.$$eval('#lib-list .track', r => r.map(x => x.innerText.replace(/\n/g, ' | '))));
-await o.screenshot({ path: process.env.SHOTS ? process.env.SHOTS + '/library.png' : '/dev/null' });
+if (process.env.SHOTS) await o.screenshot({ path: process.env.SHOTS + '/library.png' });
 await o.click('#lib-list .track button:last-child');
 await o.waitForSelector('#list:not([hidden])');
 if (process.env.SHOTS) await o.screenshot({ path: process.env.SHOTS + '/open.png', fullPage: true });
