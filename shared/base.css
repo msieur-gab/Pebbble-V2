@@ -1,17 +1,14 @@
 :root {
-    --bg: #f7f5f0; --fg: #1d1b18; --muted: #6b665d; --line: #d9d4c9; --accent: #3f5e4a; --warn: #9a3b2a;
-    color-scheme: light dark;
+    --bg: #ecebe7; --surface: #f6f5f2; --fg: #1d1b18; --muted: #66625a; --line: #d6d2c9; --accent: #3f5e4a; --warn: #9a3b2a;
+    color-scheme: light;
     font: 16px/1.5 system-ui, sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-    :root { --bg: #171614; --fg: #ece8e0; --muted: #9c968b; --line: #3a3732; --accent: #8fb39a; --warn: #e08a76; }
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--fg); }
 main { max-width: 560px; margin: 0 auto; padding: 24px 16px 64px; }
 h1 { font-size: 1.4rem; margin: 0 0 16px; }
 h2 { font-size: 1.05rem; margin: 24px 0 8px; }
-section, details, main > form { border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin: 12px 0; }
+section, details, main > form { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin: 12px 0; }
 summary { cursor: pointer; font-weight: 600; }
 label { display: block; font-size: .85rem; color: var(--muted); margin: 10px 0 4px; }
 input, select, button { font: inherit; width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: inherit; }
@@ -30,7 +27,7 @@ audio { width: 100%; margin-top: 12px; }
 [hidden] { display: none !important; }
 .cover { color: var(--fg); }
 .cover svg { display: block; width: 100%; height: auto; }
-#hero { border: 0; text-align: center; padding: 0; }
+#hero { background: none; border: 0; text-align: center; padding: 0; }
 #hero .cover { width: min(56vw, 220px); margin: 0 auto; }
 #hero h2 { font-size: 1.3rem; margin: 4px 0 0; }
 .thumb { width: 44px; flex: 0 0 44px; }

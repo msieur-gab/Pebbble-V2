@@ -43,7 +43,7 @@ async function home() {
         const row = document.createElement('div');
         row.className = 'track';
         row.innerHTML = '<div class="lib-name"><div class="cover thumb"></div><div><div class="title"></div><div class="muted"></div></div></div><div class="row"><button type="button" class="quiet"></button><button type="button"></button></div>';
-        row.querySelector('.thumb').innerHTML = pebbleCover(rec.cover || rec.id, { detail: 'thumb', ink: 'currentColor' });
+        row.querySelector('.thumb').innerHTML = pebbleCover(rec.cover || rec.id, { detail: 'thumb' });
         row.querySelector('.title').textContent = rec.title || rec.name || t('owner.someone');
         row.querySelector('.muted').textContent = t('library.count', { count: rec.count });
         const [forget, open] = row.querySelectorAll('button');
@@ -100,7 +100,7 @@ function next() {
 }
 
 function renderOwner() {
-    $('cover').innerHTML = pebbleCover(F.coverSeed(header, p.id), { ink: 'currentColor' });
+    $('cover').innerHTML = pebbleCover(F.coverSeed(header, p.id));
     $('pebbble-name').textContent = header.name || '';
     $('pebbble-name').hidden = !header.name;
     const { name, contact } = header.owner;

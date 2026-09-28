@@ -103,7 +103,7 @@ function renderTracks() {
 // ---------- cover ----------
 
 function drawCover() {
-    $('w-cover').innerHTML = pebbleCover(F.coverSeed(s.header, s.p.id), { ink: 'currentColor' });
+    $('w-cover').innerHTML = pebbleCover(F.coverSeed(s.header, s.p.id));
 }
 $('w-reroll').onclick = () => { s.header.cover = F.newCoverSeed(); drawCover(); };
 
