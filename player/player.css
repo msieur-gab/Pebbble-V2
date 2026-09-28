@@ -176,3 +176,15 @@ a { color: inherit; }
 .mini-inner { touch-action: none; transition: transform .25s var(--ease), opacity .25s var(--ease); }
 .mini-inner.dragging { transition: none; }
 .scrim.over { z-index: 35; }
+
+/* Fixed top, scrolling voices; on a long list the stone shrinks so more voices fit. */
+.sheet.player { display: flex; flex-direction: column; overflow: hidden; padding-bottom: 0; }
+.player .drag-zone, .player #controls { flex: none; }
+.player .scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 14px -24px 0; padding: 0 24px calc(40px + env(safe-area-inset-bottom)); border-top: 1px solid transparent; transition: border-color .3s; }
+.player .scroll .voices { margin-top: 0; }
+.player .scroll .voice:first-child { border-top: 0; }
+.player .stone { transition: width .35s var(--ease); }
+.player h2 { transition: font-size .35s var(--ease), margin .35s var(--ease); }
+.player.compact .stone { width: 76px; }
+.player.compact h2 { font-size: 1.2rem; margin-top: 10px; }
+.player.compact .scroll { border-top-color: var(--line); }

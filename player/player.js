@@ -80,6 +80,7 @@ function renderArrival() {
 /** The pebbble sheet's static parts: name, voices, owner line, notes. */
 function renderSheet() {
     const { name, contact } = header.owner;
+    if (!$('player').classList.contains('on')) { $('pl-scroll').scrollTop = 0; $('player').classList.remove('compact'); }
     $('pl-name').textContent = header.name || name || '';
     $('pl-status').hidden = !offline && header.tracks.length > 0;
     $('pl-status').textContent = header.tracks.length ? t('status.offline') : t('status.empty');
@@ -355,6 +356,17 @@ function renderMini() {
 }
 
 function openPlayer() { updatePlayer(); openSheet('player'); }
+
+// Long lists: shrink the stone while the voices scroll. Only when the list is truly
+// longer than the space, so a short list never flickers between the two sizes.
+$('pl-scroll').addEventListener('scroll', () => {
+    const sc = $('pl-scroll'), sheet = $('player');
+    if (!sheet.classList.contains('compact')) {
+        if (sc.scrollTop > 24 && sc.scrollHeight - sc.clientHeight > 180) sheet.classList.add('compact');
+    } else if (sc.scrollTop === 0) {
+        sheet.classList.remove('compact');
+    }
+});
 const collapse = () => closeSheets();
 $('collapse').onclick = collapse;
 $('mini-open').onclick = e => { if (miniSwiped) return; if (!e.target.closest('#mini-play')) openPlayer(); };
@@ -366,7 +378,7 @@ $('mini-open').onclick = e => { if (miniSwiped) return; if (!e.target.closest('#
     const sheet = $('player'), zone = $('drag-zone');
     let y0 = null, dy = 0, t0 = 0, dragging = false;
     zone.addEventListener('pointerdown', e => {
-        if (sheet.scrollTop > 0 || e.button > 0) return;
+        if (e.button > 0) return;
         y0 = e.clientY; dy = 0; t0 = performance.now(); dragging = false;
     });
     zone.addEventListener('pointermove', e => {
