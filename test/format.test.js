@@ -109,3 +109,24 @@ test('library: same passphrase finds and opens the same list', async () => {
     assert.equal(back.items[0].name, 'Lullabies (renamed)');
     await assert.rejects(F.openLibrary(await F.sealLibrary(lib, a), { ...other, libId: a.libId }), /decrypt-failed/);
 });
+
+test('password: change and remove without touching the audio', async () => {
+    const { id } = F.newPebbble();
+    const h = F.newHeader({});
+    const f = F.newFileName();
+    const tr = await F.sealTrack(audio, id, f);
+    await F.addTrack(h, id, { file: f, title: 'one', type: 'audio/webm', key: tr.key });
+    const k1 = await F.setPassword(h, id, 'caillou', 'river');
+
+    const k2 = await F.changePassword(h, id, k1, 'galet', 'beach');
+    assert.equal(h.hint, 'beach');
+    await assert.rejects(F.unlock(h, id, 'caillou'), /wrong-password/);
+    assert.equal(await F.pwKeyStillValid(h, id, k1), false);
+    assert.equal(await F.pwKeyStillValid(h, id, k2), true);
+    // same sealed audio still opens
+    assert.deepEqual(await F.openTrack(tr.sealed, id, f, await F.trackKey(h.tracks[0], id, await F.unlock(h, id, 'galet'))), audio);
+
+    await F.removePassword(h, id, k2);
+    assert.equal(h.pw, undefined);
+    assert.deepEqual(await F.openTrack(tr.sealed, id, f, await F.trackKey(h.tracks[0], id)), audio);
+});

@@ -59,7 +59,14 @@
                 <label>Password (optional) <input id="pw" type="password" autocomplete="new-password" data-lpignore="true"></label>
                 <label>Hint shown to everyone <input id="hint" autocomplete="off"></label>
             </div>
-            <p id="pw-set" class="muted" hidden>Password protected. Hint: <em id="hint-show"></em></p>
+            <div id="pw-set" hidden>
+                <p class="muted" id="pw-state">Password protected.</p>
+                <div id="pw-edit">
+                    <label>Hint shown to everyone <input id="hint-edit" autocomplete="off"></label>
+                    <label>New password (leave empty to keep the current one) <input id="pw-change" type="password" autocomplete="new-password" data-lpignore="true"></label>
+                </div>
+                <button type="button" id="pw-remove" class="quiet">Remove password</button>
+            </div>
 
             <h2>Messages</h2>
             <div id="tracks"></div>

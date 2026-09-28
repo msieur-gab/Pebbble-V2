@@ -168,6 +168,32 @@ export async function setPassword(header, id, password, hint = '') {
     return pwKey;
 }
 
+/**
+ * Take the password off: every track key goes back to plain `k` in the header.
+ * Needs the current pwKey. Audio files are untouched.
+ */
+export async function removePassword(header, id, pwKey) {
+    if (!header.pw) return;
+    for (const t of header.tracks) {
+        t.k = b64u.enc(await trackKey(t, id, pwKey));
+        delete t.wk;
+    }
+    delete header.pw;
+    delete header.hint;
+}
+
+/** New password (and hint) in place of the old one. Only the header changes. Returns the new pwKey. */
+export async function changePassword(header, id, pwKey, password, hint = '') {
+    await removePassword(header, id, pwKey);
+    return setPassword(header, id, password, hint);
+}
+
+/** True when a remembered pwKey still opens this header (false after a password change). */
+export async function pwKeyStillValid(header, id, pwKey) {
+    if (!header.pw || !pwKey) return false;
+    try { await open(pwKey, b64u.dec(header.pw.check), checkAad(id)); return true; } catch { return false; }
+}
+
 /** Returns pwKey, or throws 'wrong-password'. */
 export async function unlock(header, id, password) {
     const { salt, rounds, check } = header.pw;

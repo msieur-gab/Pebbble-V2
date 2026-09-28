@@ -80,7 +80,8 @@ async function load(found) {
         status(t('player.cannotOpen'));
         return;
     }
-    if (usable?.pwKey && header.pw) pwKey = usable.pwKey;
+    // A remembered password key stops working if the creator changed the password: ask again.
+    if (usable?.pwKey && await F.pwKeyStillValid(header, p.id, usable.pwKey)) pwKey = usable.pwKey;
 
     status(offline ? t('player.offline') : '');
     renderOwner();

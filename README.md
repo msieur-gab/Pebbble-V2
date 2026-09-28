@@ -25,7 +25,7 @@ Storage (Cloudflare R2) only ever holds encrypted files:
 
 - **Name and cover**: each pebbble has a name (like an album title) and a drawn stone from [`shared/cover.js`](shared/cover.js). The stone is generated from a seed (the pebbble id, or another one picked in the writer), so the same stone appears on every device and no image is stored.
 - **Owner card**: readable by anyone who taps the stone ("belongs to…, if found contact…").
-- **Password (optional)**: track keys are wrapped a second time with a key derived from the password (PBKDF2-SHA256, 600,000 rounds). The hint stays readable.
+- **Password (optional)**: track keys are wrapped a second time with a key derived from the password (PBKDF2-SHA256, 600,000 rounds). The hint stays readable. Because the password only wraps these small keys, it can be added, changed or removed at any time by rewriting the header: recordings and the stone are untouched. An owned phone that remembered an old password asks again.
 - **Date windows**: one-off (`2026-12-24 → 2026-12-26`) or every year (`12-20..12-27`, may wrap the new year). This is about discovery, not security: it follows the phone's clock.
 - **Adding messages later**: new audio is uploaded and the header rewritten. The stone is never rewritten.
 - **Owned or not-owned device**: asked once on each phone. *Owned* keeps the header, keys and audio in IndexedDB, so the pebbble opens offline and without retyping the password, and the player lists saved pebbbles when opened without a tap. *Not-owned* stores nothing; it's all gone when the page closes. Switching to not-owned wipes the device. The offline cache only holds the app's own files, never pebbble content.

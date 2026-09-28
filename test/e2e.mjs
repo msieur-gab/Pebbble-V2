@@ -185,5 +185,37 @@ await wrongPc.goto(base + '/writer/');
 await wrongPc.click('#settings summary'); await wrongPc.fill('#lib-pass', 'wrong words'); await wrongPc.click('#save-settings');
 await wrongPc.waitForFunction(() => document.getElementById('mine-msg').textContent.startsWith('No pebbbles'));
 log('other passphrase sees', await wrongPc.$$eval('#mine-list .mine', r => r.length), 'pebbbles');
+// Change the password and hint on the computer; audio untouched, stone untouched
+const before = readdirSync(`.dev-bucket/${id}`).filter(f => f !== 'header').map(f => f + readFileSync(`.dev-bucket/${id}/${f}`).length).sort().join();
+await pc.fill('#unlock-pw', 'caillou'); await pc.click('#unlock-btn');
+await pc.waitForSelector('#fields:not([hidden])');
+await pc.fill('#hint-edit', 'on the beach');
+await pc.fill('#pw-change', 'galet');
+await pc.click('#save'); await pc.waitForSelector('#done:not([hidden])');
+const after = readdirSync(`.dev-bucket/${id}`).filter(f => f !== 'header').map(f => f + readFileSync(`.dev-bucket/${id}/${f}`).length).sort().join();
+log('password changed; recordings untouched', before === after);
+
+// Owned phone that remembered the old password: asks again, with the new hint
+const own2 = await ownCtx.newPage();
+await own2.goto(url);
+await own2.waitForSelector('#lock:not([hidden])');
+log('owned phone asks again, hint:', await own2.textContent('#hint'));
+await own2.fill('#pw', 'caillou'); await own2.click('#unlock');
+await own2.waitForFunction(() => document.getElementById('lock-msg').textContent);
+await own2.fill('#pw', 'galet'); await own2.click('#unlock');
+await own2.waitForSelector('#list:not([hidden])');
+log('old password refused, new one opens; played', await playFirst(own2), 's');
+
+// Remove the password entirely
+await pc.click('#done .back'); await pc.click('#mine-list .mine');
+await pc.waitForSelector('#unlock:not([hidden])');
+await pc.fill('#unlock-pw', 'galet'); await pc.click('#unlock-btn');
+await pc.waitForSelector('#fields:not([hidden])');
+await pc.click('#pw-remove');
+await pc.click('#save'); await pc.waitForSelector('#done:not([hidden])');
+const open3 = await guestCtx.newPage();
+await open3.goto(url);
+await open3.waitForSelector('#list:not([hidden])');
+log('password removed: opens without asking; played', await playFirst(open3), 's');
 log('page errors', errors.length ? errors : 'none');
 await browser.close();

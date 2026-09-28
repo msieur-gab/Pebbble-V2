@@ -144,7 +144,12 @@ function renderEditor() {
     $('owner-contact').value = header.owner.contact;
     $('pw-new').hidden = !!header.pw;
     $('pw-set').hidden = !header.pw;
-    $('hint-show').textContent = header.hint || '(none)';
+    s.removePw = false;
+    $('pw-state').textContent = 'Password protected.';
+    $('pw-edit').hidden = false;
+    $('pw-remove').textContent = 'Remove password';
+    $('hint-edit').value = header.hint || '';
+    $('pw-change').value = '';
     renderTracks();
     show('editor');
 }
@@ -219,6 +224,15 @@ $('t-add').onclick = () => {
 };
 
 // ---------- password ----------
+// The password only wraps the small per-message keys in the header, so changing or
+// removing it rewrites the header alone: recordings and the stone stay as they are.
+
+$('pw-remove').onclick = () => {
+    s.removePw = !s.removePw;
+    $('pw-edit').hidden = s.removePw;
+    $('pw-state').textContent = s.removePw ? 'The password will be removed when you save.' : 'Password protected.';
+    $('pw-remove').textContent = s.removePw ? 'Keep the password' : 'Remove password';
+};
 
 $('unlock-btn').onclick = async () => {
     try {
@@ -241,8 +255,17 @@ $('save').onclick = async () => {
         header.name = $('p-name').value.trim();
         header.owner = { name: $('owner-name').value.trim(), contact: $('owner-contact').value.trim() };
 
-        const password = $('pw').value;
-        if (password && !header.pw) s.pwKey = await F.setPassword(header, p.id, password, $('hint').value.trim());
+        if (!header.pw) {
+            const password = $('pw').value;
+            if (password) s.pwKey = await F.setPassword(header, p.id, password, $('hint').value.trim());
+        } else if (s.removePw) {
+            await F.removePassword(header, p.id, s.pwKey);
+            s.pwKey = null;
+        } else if ($('pw-change').value) {
+            s.pwKey = await F.changePassword(header, p.id, s.pwKey, $('pw-change').value, $('hint-edit').value.trim());
+        } else {
+            header.hint = $('hint-edit').value.trim();
+        }
 
         for (const [i, t] of s.pending.entries()) {
             msg(`Encrypting and uploading ${i + 1} of ${s.pending.length}…`);
