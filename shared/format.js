@@ -213,3 +213,34 @@ export function windowStatus(window, now = new Date()) {
     if (closes && now > closes) return { state: 'past', closes };
     return { state: 'open', ...(closes && { closes }) };
 }
+
+// ---------- writer library (the creator's list of pebbbles) ----------
+// One encrypted file per creator: _library/<libId>. Both libId and the key come
+// from a passphrase, so any device with the passphrase finds and opens the same list.
+// { v: 1, items: [{ id, key, name, cover, owner, count, updated }] }
+
+const libAad = libId => `pebbble/v2/library/${libId}`;
+
+/** Passphrase → { libId, libKey } (base64url). Salted per bucket. */
+export async function deriveLibrary(passphrase, bucket) {
+    const base = await subtle.importKey('raw', te.encode(passphrase.normalize('NFC')), 'PBKDF2', false, ['deriveBits']);
+    const bits = new Uint8Array(await subtle.deriveBits(
+        { name: 'PBKDF2', hash: 'SHA-256', salt: te.encode(`pebbble/v2/library/${bucket}`), iterations: PBKDF2_ROUNDS }, base, 384));
+    return { libId: b64u.enc(bits.subarray(32)), libKey: b64u.enc(bits.subarray(0, 32)) };
+}
+
+export const newLibrary = () => ({ v: 1, items: [] });
+
+export function sealLibrary(lib, { libId, libKey }) {
+    return seal(b64u.dec(libKey), te.encode(JSON.stringify(lib)), libAad(libId));
+}
+
+export async function openLibrary(sealed, { libId, libKey }) {
+    return JSON.parse(td.decode(await open(b64u.dec(libKey), sealed, libAad(libId))));
+}
+
+/** Insert or update one pebbble in the list, newest first. */
+export function upsertLibrary(lib, entry) {
+    lib.items = [entry, ...lib.items.filter(i => i.id !== entry.id)];
+    return lib;
+}

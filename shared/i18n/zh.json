@@ -7,7 +7,8 @@
     "cannotOpen": "无法打开这颗石头。",
     "offline": "离线 — 显示已保存的版本。",
     "play": "播放",
-    "couldNotPlay": "无法播放“{title}”。"
+    "couldNotPlay": "无法播放“{title}”。",
+    "edit": "编辑"
   },
   "owner": {
     "belongsTo": "这颗石头属于",

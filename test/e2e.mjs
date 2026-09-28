@@ -14,12 +14,18 @@ wav.writeUInt16LE(2, 32); wav.writeUInt16LE(16, 34); wav.write('data', 36); wav.
 for (let i = 0; i < n; i++) wav.writeInt16LE(Math.round(8000 * Math.sin(2 * Math.PI * 440 * i / 8000)), 44 + i * 2);
 writeFileSync(SP + '/tone.wav', wav);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM || undefined, args: ['--autoplay-policy=no-user-gesture-required'] });
-const page = await browser.newPage();
+const phone = await browser.newContext();
+const page = await phone.newPage();
 const errors = []; page.on('pageerror', e => errors.push(e.message));
 const log = (...a) => console.log('•', ...a);
 
 // Writer: new pebbble with password and three messages
 await page.goto(base + '/writer/');
+// This browser is "Gab's phone": set the library passphrase first
+await page.click('#settings summary');
+await page.fill('#lib-pass', 'pierre de rivière');
+await page.click('#save-settings');
+await page.waitForFunction(() => document.getElementById('mine-msg').textContent.startsWith('No pebbbles yet'));
 await page.click('#new');
 await page.fill('#p-name', 'Lullabies');
 const firstStone = await page.innerHTML('#w-cover');
@@ -143,5 +149,41 @@ await g2.waitForSelector('#lock:not([hidden])');
 await g2.fill('#pw', 'caillou'); await g2.click('#unlock');
 await g2.waitForSelector('#list:not([hidden])');
 log('tracks now', await g2.$$eval('#tracks .track', r => r.length), '(device question remembered:', !(await g2.isVisible('#device')), ')');
+// My pebbbles: listed on this phone after saving
+await page.click('#done .back');
+await page.waitForSelector('#mine-list .mine');
+log('my pebbbles (phone)', await page.$$eval('#mine-list .mine', r => r.map(x => x.innerText.replace(/\n/g, ' | '))));
+
+// Player on the creator's phone shows Edit, which opens the writer on that pebbble
+const mine = await phone.newPage(); mine.on('pageerror', e => errors.push(e.message));
+await mine.goto(url);
+await mine.waitForSelector('#device:not([hidden])');
+log('Edit on creator phone', await mine.isVisible('#edit'));
+await mine.click('#device-yes'); await mine.click('#device-continue');
+await mine.click('#edit');
+await mine.waitForSelector('#unlock:not([hidden])');
+log('Edit opened writer on', await mine.inputValue('#p-name') || '(locked, asks password first)', '| address', mine.url());
+await mine.fill('#unlock-pw', 'caillou'); await mine.click('#unlock-btn');
+await mine.waitForSelector('#fields:not([hidden])');
+log('editing', await mine.inputValue('#p-name'), 'with', await mine.$$eval('#tracks .track', r => r.length), 'messages');
+
+// Guest phone: no Edit
+log('Edit on guest phone', await g2.isVisible('#edit'));
+
+// A second device ("computer") with the same passphrase sees the same list
+const pc = await (await browser.newContext()).newPage(); pc.on('pageerror', e => errors.push(e.message));
+await pc.goto(base + '/writer/');
+log('computer before passphrase:', await pc.textContent('#mine-msg'));
+await pc.click('#settings summary'); await pc.fill('#lib-pass', 'pierre de rivière'); await pc.click('#save-settings');
+await pc.waitForSelector('#mine-list .mine');
+log('my pebbbles (computer)', await pc.$$eval('#mine-list .mine', r => r.map(x => x.innerText.replace(/\n/g, ' | '))));
+await pc.click('#mine-list .mine');
+await pc.waitForSelector('#unlock:not([hidden])');
+log('computer opened it from the list, no link copied');
+const wrongPc = await (await browser.newContext()).newPage();
+await wrongPc.goto(base + '/writer/');
+await wrongPc.click('#settings summary'); await wrongPc.fill('#lib-pass', 'wrong words'); await wrongPc.click('#save-settings');
+await wrongPc.waitForFunction(() => document.getElementById('mine-msg').textContent.startsWith('No pebbbles'));
+log('other passphrase sees', await wrongPc.$$eval('#mine-list .mine', r => r.length), 'pebbbles');
 log('page errors', errors.length ? errors : 'none');
 await browser.close();

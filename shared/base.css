@@ -32,3 +32,6 @@ audio { width: 100%; margin-top: 12px; }
 #hero h2 { font-size: 1.3rem; margin: 4px 0 0; }
 .thumb { width: 44px; flex: 0 0 44px; }
 .lib-name { display: flex; gap: 12px; align-items: center; }
+button.mine { display: flex; width: 100%; margin: 0; padding: 10px 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; text-align: left; font-weight: 400; background: none; }
+button.mine .title, button.mine .muted { display: block; }
+#edit { display: inline-block; margin-top: 6px; color: var(--accent); font-weight: 600; text-decoration: none; }

@@ -7,7 +7,8 @@
     "cannotOpen": "This stone could not be opened.",
     "offline": "Offline — showing the saved version.",
     "play": "Play",
-    "couldNotPlay": "Could not play “{title}”."
+    "couldNotPlay": "Could not play “{title}”.",
+    "edit": "Edit"
   },
   "owner": {
     "belongsTo": "This pebbble belongs to",

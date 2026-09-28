@@ -23,13 +23,78 @@ function creds() {
 
 const publicBase = () => loadSettings().publicBase || config.publicBase;
 
-for (const input of $('settings').querySelectorAll('input')) input.value = loadSettings()[input.name] || '';
-$('save-settings').onclick = () => {
-    const s = {};
-    for (const input of $('settings').querySelectorAll('input')) s[input.name] = input.value.trim();
+const settingInputs = () => $('settings').querySelectorAll('input[name]');
+for (const input of settingInputs()) input.value = loadSettings()[input.name] || '';
+$('save-settings').onclick = async () => {
+    const s = loadSettings();
+    for (const input of settingInputs()) s[input.name] = input.value.trim();
+    const pass = $('lib-pass').value;
+    if (pass) {
+        $('save-settings').textContent = 'Saving…';
+        Object.assign(s, await F.deriveLibrary(pass, config.devEndpoint ? 'dev' : s.bucket));
+        $('lib-pass').value = '';
+        localStorage.removeItem(LIB_CACHE);
+    }
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+    $('save-settings').textContent = 'Save settings';
     $('settings').open = false;
+    loadLibrary();
 };
+
+// ---------- my pebbbles (library) ----------
+// Kept as one encrypted file in the bucket, plus a copy on this device so the list
+// shows offline and the player can recognise this creator's pebbbles.
+
+const LIB_CACHE = 'pebbble-writer-library';
+let library = F.newLibrary();
+
+const libCreds = () => { const s = loadSettings(); return s.libId ? { libId: s.libId, libKey: s.libKey } : null; };
+const cacheLibrary = () => { try { localStorage.setItem(LIB_CACHE, JSON.stringify(library)); } catch {} };
+const cachedLibrary = () => { try { return JSON.parse(localStorage.getItem(LIB_CACHE)) || F.newLibrary(); } catch { return F.newLibrary(); } };
+
+async function fetchLibrary(lc) {
+    const sealed = await R2.get(publicBase(), `_library/${lc.libId}`, { fresh: true });
+    return sealed ? F.openLibrary(sealed, lc) : F.newLibrary();
+}
+
+async function loadLibrary() {
+    const lc = libCreds();
+    library = lc ? cachedLibrary() : F.newLibrary();
+    renderLibrary();
+    if (!lc) return;
+    try { library = await fetchLibrary(lc); cacheLibrary(); renderLibrary(); } catch {}
+}
+
+/** Add or refresh one pebbble in the list (read–modify–write, so two devices don't overwrite each other). */
+async function remember(p, header) {
+    const lc = libCreds();
+    if (!lc) return;
+    const entry = { id: p.id, key: p.key, name: header.name || '', cover: F.coverSeed(header, p.id), owner: header.owner.name, count: header.tracks.length, updated: Date.now() };
+    try {
+        library = F.upsertLibrary(await fetchLibrary(lc), entry);
+        await R2.put(creds(), `_library/${lc.libId}`, await F.sealLibrary(library, lc), { cacheControl: 'no-cache' });
+        cacheLibrary();
+    } catch (e) {
+        $('mine-msg').textContent = `Could not update your list: ${e.message}`;
+    }
+}
+
+function renderLibrary() {
+    const lc = libCreds();
+    $('mine-msg').textContent = !lc ? 'Set a library passphrase in Storage settings to keep a list of your pebbbles on every device.'
+        : library.items.length ? '' : 'No pebbbles yet. New ones, and any you open, will appear here.';
+    $('mine-list').replaceChildren(...library.items.map(it => {
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'track quiet mine';
+        row.innerHTML = '<span class="lib-name"><span class="cover thumb"></span><span><span class="title"></span><span class="muted"></span></span></span>';
+        row.querySelector('.thumb').innerHTML = pebbleCover(it.cover || it.id, { detail: 'thumb' });
+        row.querySelector('.title').textContent = it.name || 'Untitled';
+        row.querySelector('.muted').textContent = `${it.count} message${it.count === 1 ? '' : 's'}${it.owner ? ` · ${it.owner}` : ''}`;
+        row.onclick = () => openPebbble({ id: it.id, key: it.key });
+        return row;
+    }));
+}
 
 // ---------- editor state ----------
 // s = { p: {id, key}, header, pwKey, pending: [{title, blob, type, window}], removed: [file], isNew }
@@ -54,6 +119,7 @@ async function openPebbble(p) {
         s = { p, header, pwKey: null, pending: [], removed: [], isNew: false };
         $('start-msg').textContent = '';
         renderEditor();
+        remember(p, header); // opening a stone adds it to the list
     } catch (e) {
         $('start-msg').textContent = e.message === 'decrypt-failed' ? 'This link does not open that pebbble.' : e.message;
     }
@@ -191,6 +257,7 @@ $('save').onclick = async () => {
         await R2.put(c, `${p.id}/header`, await F.sealHeader(header, p), { cacheControl: 'no-cache' });
         for (const file of s.removed) await R2.del(c, `${p.id}/${file}`);
         s.removed = [];
+        await remember(p, header);
 
         msg('');
         $('done-url').textContent = F.tagUrl(config.appBase, p);
@@ -243,3 +310,10 @@ $('open-link').onclick = () => {
 };
 
 $('new').onclick = startNew;
+for (const b of document.querySelectorAll('.back')) b.onclick = () => { show('start'); loadLibrary(); };
+
+// Opened from the player's Edit button: writer/#<id>.<key>
+const fromPlayer = F.parseFragment(location.hash);
+if (fromPlayer) history.replaceState(null, '', location.pathname);
+loadLibrary();
+if (fromPlayer) openPebbble(fromPlayer);

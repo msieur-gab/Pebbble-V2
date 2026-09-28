@@ -103,10 +103,20 @@ function renderOwner() {
     $('cover').innerHTML = pebbleCover(F.coverSeed(header, p.id));
     $('pebbble-name').textContent = header.name || '';
     $('pebbble-name').hidden = !header.name;
+    // Edit shows only on a device where the creator's writer library holds this pebbble.
+    $('edit').hidden = !isMine(p);
+    $('edit').href = `../writer/#${p.id}.${p.key}`;
     const { name, contact } = header.owner;
     $('owner-name').textContent = name || t('owner.someone');
     $('owner-contact').textContent = contact;
     $('owner-contact-line').hidden = !contact;
+}
+
+function isMine({ id, key }) {
+    try {
+        const lib = JSON.parse(localStorage.getItem('pebbble-writer-library'));
+        return !!lib?.items?.some(i => i.id === id && i.key === key);
+    } catch { return false; }
 }
 
 // ---------- device question (asked once) ----------

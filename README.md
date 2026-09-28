@@ -29,6 +29,8 @@ Storage (Cloudflare R2) only ever holds encrypted files:
 - **Date windows**: one-off (`2026-12-24 → 2026-12-26`) or every year (`12-20..12-27`, may wrap the new year). This is about discovery, not security: it follows the phone's clock.
 - **Adding messages later**: new audio is uploaded and the header rewritten. The stone is never rewritten.
 - **Owned or not-owned device**: asked once on each phone. *Owned* keeps the header, keys and audio in IndexedDB, so the pebbble opens offline and without retyping the password, and the player lists saved pebbbles when opened without a tap. *Not-owned* stores nothing; it's all gone when the page closes. Switching to not-owned wipes the device. The offline cache only holds the app's own files, never pebbble content.
+- **My pebbbles (writer library)**: the creator's list of pebbbles (name, stone, key) is one encrypted file in the bucket, `_library/<id>`. Its location and key are both derived from a passphrase set in the writer's settings (PBKDF2, salted per bucket); the passphrase itself is never stored. Any device with the storage settings and the passphrase sees the same list. Opening a stone in the writer adds it to the list.
+- **Tap to edit**: on a device where the writer library is open, the player shows *Edit* on the creator's own pebbbles and opens the writer on them. No link copying. Today the R2 token is the real edit right; a per-pebbble edit key comes with a future upload server.
 - **Languages**: English, French, Spanish, Chinese (`shared/i18n/`), detected from the phone and changeable in settings.
 
 All of this lives in [`shared/format.js`](shared/format.js), which both apps import.
@@ -90,5 +92,5 @@ The player's address is written onto every stone and can't change afterwards. `g
 ## Not in this core yet
 
 - Full player UI from v1 (Lit components, sleep timer), after the calmer redesign.
-- Tap-to-edit with a separate edit key, and a "my pebbbles" library in the writer.
+- Per-pebbble edit keys, checked by a small upload server (needed before others can create pebbbles).
 - Tag locking, and re-sealing v1 stones.

@@ -93,3 +93,19 @@ test('name and cover seed', async () => {
     assert.equal(back.name, 'Lullabies');
     assert.equal(F.coverSeed(back, p.id), h.cover);
 });
+
+test('library: same passphrase finds and opens the same list', async () => {
+    const a = await F.deriveLibrary('pierre de rivière', 'pebbble');
+    const b = await F.deriveLibrary('pierre de rivière', 'pebbble');
+    assert.deepEqual(a, b);
+    const other = await F.deriveLibrary('something else', 'pebbble');
+    assert.notEqual(a.libId, other.libId);
+
+    const p = F.newPebbble();
+    const lib = F.upsertLibrary(F.newLibrary(), { ...p, name: 'Lullabies', updated: 1 });
+    F.upsertLibrary(lib, { ...p, name: 'Lullabies (renamed)', updated: 2 });
+    assert.equal(lib.items.length, 1);
+    const back = await F.openLibrary(await F.sealLibrary(lib, a), b);
+    assert.equal(back.items[0].name, 'Lullabies (renamed)');
+    await assert.rejects(F.openLibrary(await F.sealLibrary(lib, a), { ...other, libId: a.libId }), /decrypt-failed/);
+});

@@ -7,7 +7,8 @@
     "cannotOpen": "No se pudo abrir esta piedra.",
     "offline": "Sin conexión — versión guardada.",
     "play": "Escuchar",
-    "couldNotPlay": "No se pudo reproducir «{title}»."
+    "couldNotPlay": "No se pudo reproducir «{title}».",
+    "edit": "Editar"
   },
   "owner": {
     "belongsTo": "Este pebbble pertenece a",

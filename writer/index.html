@@ -13,19 +13,24 @@
     <h1>Pebbble Writer</h1>
 
     <details id="settings">
-        <form autocomplete="off" onsubmit="return false">
         <summary>Storage settings</summary>
+        <form autocomplete="off" onsubmit="return false">
         <p class="muted">Kept on this device only. Create them in Cloudflare → R2 → Manage API tokens (Object Read &amp; Write, this bucket only).</p>
         <label>Account ID <input name="accountId" autocomplete="off"></label>
         <label>Access key ID <input name="accessKeyId" autocomplete="off"></label>
         <label>Secret access key <input name="secretAccessKey" type="password" autocomplete="new-password" data-lpignore="true"></label>
         <label>Bucket <input name="bucket" autocomplete="off"></label>
         <label>Public bucket URL <input name="publicBase" autocomplete="off" placeholder="https://pub-….r2.dev"></label>
+        <label>Library passphrase <input id="lib-pass" type="password" autocomplete="new-password" data-lpignore="true" placeholder="Unchanged"></label>
+        <p class="muted">Keeps the list of your pebbbles, encrypted in your bucket. Use the same passphrase on every device. It is not stored; only keys derived from it are.</p>
         <button type="button" id="save-settings">Save settings</button>
         </form>
     </details>
 
     <section id="start">
+        <h2>My pebbbles</h2>
+        <div id="mine-list"></div>
+        <p id="mine-msg" class="muted"></p>
         <button type="button" id="new">New pebbble</button>
         <button type="button" id="scan" class="quiet">Open a pebbble by tapping it</button>
         <label>…or paste its link <input id="link" autocomplete="off" placeholder="https://…#id.key"></label>
@@ -34,6 +39,7 @@
     </section>
 
     <section id="editor" hidden>
+        <button type="button" class="quiet back" style="width: auto; margin: 0 0 8px;">← My pebbbles</button>
         <h2 id="editor-title">New pebbble</h2>
 
         <form id="unlock" autocomplete="off" onsubmit="return false" hidden>
@@ -94,6 +100,7 @@
         <button type="button" id="copy" class="quiet">Copy link</button>
         <button type="button" id="try" class="quiet">Open in player</button>
         <p id="tag-msg" class="muted"></p>
+        <button type="button" class="quiet back">← My pebbbles</button>
     </section>
 </main>
 <script type="module" src="writer.js"></script>
