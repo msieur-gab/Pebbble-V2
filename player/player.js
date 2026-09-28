@@ -1,6 +1,10 @@
-// Pebbble v2 player.
-// Not-owned device: everything lives in memory and is gone when the page closes.
-// Owned device: header, keys and audio are kept in IndexedDB for offline listening.
+// Pebbble player.
+//
+// Views (drawn into #app): arrival (a stone was just tapped), pebbble page, library.
+// Sheets: first-time device question, password, this-pebbble menu, settings, full player.
+//
+// Not-owned phone: everything lives in memory and is gone when the page closes.
+// Owned phone: header, keys and audio are kept in IndexedDB for offline listening.
 import * as F from '../shared/format.js';
 import * as R2 from '../shared/r2.js';
 import * as L from './library.js';
@@ -9,20 +13,132 @@ import { pebbleCover } from '../shared/cover.js';
 import { initI18n, setLanguage, language, LANGUAGES, t } from '../shared/i18n.js';
 
 const $ = id => document.getElementById(id);
-const SCREENS = ['empty', 'library', 'hero', 'owner', 'device', 'lock', 'list'];
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const mmss = s => (isFinite(s) ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}` : '0:00');
+const stone = (seed, detail = 'full') => pebbleCover(seed, { detail });
+const audio = $('audio');
 
-// Current pebbble
-let p = null, header = null, sealedHeader = null, pwKey = null, currentUrl = null;
+const ICON = {
+    play: '<svg class="icon" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>',
+    pause: '<svg class="icon" viewBox="0 0 24 24"><rect x="6.5" y="5" width="4" height="14" rx="1"/><rect x="13.5" y="5" width="4" height="14" rx="1"/></svg>',
+    playSmall: '<svg class="icon" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" fill="currentColor" stroke="none"/></svg>',
+    pauseSmall: '<svg class="icon" viewBox="0 0 24 24"><rect x="6.5" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/><rect x="13.5" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/></svg>',
+    repeat: '<svg class="icon" viewBox="0 0 24 24"><path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 0 1 3-3h13"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/></svg>',
+    moon: '<svg class="icon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
+    moonSmall: '<svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
+    settings: '<svg class="icon" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>',
+    dots: '<svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/></svg>',
+    back: '<svg class="icon" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>',
+    pen: '<svg class="icon" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg>',
+    leaf: '<svg class="icon" viewBox="0 0 24 24"><path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14z"/><path d="M5 19l7-7"/></svg>',
+};
 
-function screens(...visible) {
-    if (visible.includes('owner')) visible.push('hero'); // the pebbble's face shows whenever it is open
-    for (const id of SCREENS) $(id).hidden = !visible.includes(id);
+// ---------- state ----------
+let view = 'none';
+let p = null, header = null, sealedHeader = null, pwKey = null, offline = false, known = false;
+const PL = { idx: -1, repeat: 'off', sleep: 0, sleepAt: 0, url: null, loading: false };
+let savedNote = '';
+
+const seed = () => F.coverSeed(header, p.id);
+const windowOf = tr => F.windowStatus(tr.window);
+const openIdx = () => header.tracks.map((tr, i) => [tr, i]).filter(([tr]) => windowOf(tr).state === 'open').map(([, i]) => i);
+const fmtDate = d => d.toLocaleDateString(language(), { day: 'numeric', month: 'long' });
+const plural = (key, count, extra = {}) => t(count === 1 ? `${key}_one` : key, { count, ...extra });
+
+// ---------- views ----------
+
+function draw(html, keepScroll = false) {
+    const y = window.scrollY;
+    $('app').innerHTML = html;
+    window.scrollTo(0, keepScroll ? y : 0);
+    renderMini();
 }
 
-function status(text) {
-    $('status').hidden = !text;
-    $('status').textContent = text || '';
+function showStatus(text) {
+    view = 'status';
+    draw(`<p class="status">${esc(text)}</p>`);
 }
+
+function renderArrival() {
+    view = 'arrival';
+    const open = openIdx().length, asleep = header.tracks.filter(tr => windowOf(tr).state === 'locked').length;
+    const { name, contact } = header.owner;
+    draw(`<section class="arrival">
+        <p class="eyebrow appear">${t(known ? 'arrival.back' : 'arrival.found')}</p>
+        <div class="stone appear d1">${stone(seed())}</div>
+        ${header.name ? `<h1 class="serif appear d2">${esc(header.name)}</h1>` : '<div style="height:28px"></div>'}
+        <p class="count soft appear d2">${plural('arrival.voices', open)}${asleep ? t('arrival.asleep', { count: asleep }) : ''}</p>
+        <button class="primary appear d3" id="listen">${t('arrival.listen')}</button>
+        ${name || contact ? `<p class="owner-note appear d4">${name ? t('arrival.owner', { name: `<b>${esc(name)}</b>` }) : ''}${contact ? `<br>${t('arrival.write', { contact: `<a href="mailto:${esc(contact)}">${esc(contact)}</a>` })}` : ''}</p>` : ''}
+        ${offline ? `<p class="saved-note">${t('status.offline')}</p>` : ''}
+    </section>`);
+    $('listen').onclick = proceed;
+}
+
+function renderPebbble(keepScroll = false) {
+    view = 'pebbble';
+    const { name, contact } = header.owner;
+    const count = header.tracks.length;
+    const playing = !audio.paused;
+    draw(`
+        <div class="bar">
+            ${L.isOwned() ? `<button class="icon-btn" id="to-lib" aria-label="${t('page.myPebbbles')}">${ICON.back}</button>` : '<span style="width:44px"></span>'}
+            <span class="title">${L.isOwned() ? t('page.myPebbbles') : ''}</span>
+            <button class="icon-btn" id="open-menu" aria-label="${t('menu.label')}">${ICON.dots}</button>
+        </div>
+        ${offline ? `<p class="status inline">${t('status.offline')}</p>` : ''}
+        <div class="pebbble-head">
+            <div class="stone ${playing ? 'breathing' : ''}" id="head-stone">${stone(seed())}</div>
+            ${header.name ? `<h1 class="serif" id="pebbble-name">${esc(header.name)}</h1>` : ''}
+            <div class="meta soft">${name ? t(count === 1 ? 'page.meta_one' : 'page.meta', { name: esc(name), count }) : plural('library.count', count)}</div>
+        </div>
+        ${count ? `<ol class="voices">${header.tracks.map((tr, i) => {
+            const w = windowOf(tr);
+            if (w.state === 'locked') return `<li class="voice sleeping"><span class="n">${ICON.moonSmall}</span><span class="t">${esc(tr.title)}<span class="wake">${t('voice.wakes', { date: fmtDate(w.opens) })}</span></span></li>`;
+            if (w.state === 'past') return `<li class="voice sleeping"><span class="n">·</span><span class="t">${esc(tr.title)}<span class="wake">${t('voice.quiet')}</span></span></li>`;
+            const cur = i === PL.idx;
+            return `<li class="voice ${cur ? 'current' : ''}" data-i="${i}"><span class="n">${cur ? `<span class="eq ${playing ? '' : 'paused'}"><i></i><i></i><i></i></span>` : i + 1}</span><span class="t">${esc(tr.title)}${w.closes ? `<span class="wake">${t('voice.until', { date: fmtDate(w.closes) })}</span>` : ''}</span><span class="d">${tr.duration ? mmss(tr.duration) : ''}</span></li>`;
+        }).join('')}</ol>` : `<p class="status inline">${t('status.empty')}</p>`}
+        ${name || contact ? `<p class="foot-note">${name ? t('page.foot', { name: esc(name) }) : ''}${name && contact ? ' · ' : ''}${contact ? t('page.footContact', { contact: `<a href="mailto:${esc(contact)}">${esc(contact)}</a>` }) : ''}</p>` : ''}
+        <p class="saved-note" id="saved-note">${esc(savedNote)}</p>`, keepScroll);
+    for (const li of $('app').querySelectorAll('.voice[data-i]')) li.onclick = () => { playAt(+li.dataset.i); openPlayer(); };
+    if ($('to-lib')) $('to-lib').onclick = () => home();
+    $('open-menu').onclick = openMenu;
+}
+
+async function renderLibrary() {
+    view = 'library';
+    const saved = L.isOwned() ? (await L.listPebbbles()).sort((a, b) => b.savedAt - a.savedAt) : [];
+    const bar = `<div class="bar"><span></span><span></span><button class="icon-btn" id="open-settings" aria-label="${t('settings.title')}">${ICON.settings}</button></div>`;
+    if (!saved.length) {
+        draw(`${bar}<section class="empty"><div class="rings"><i></i><i></i><i></i><b></b></div>
+            <h1 class="serif" style="font-size:1.6rem;margin:0 0 8px">${t('library.emptyTitle')}</h1>
+            <p class="soft" style="max-width:280px;margin:0 auto">${t('library.emptyText')}</p>
+            <p class="faint" style="font-size:.82rem;max-width:280px;margin:18px auto 0">${t('library.iphone')}</p></section>`);
+    } else {
+        draw(`${bar}<section class="library"><h1 class="serif">${t('library.title')}</h1>
+            <div class="shelf" id="shelf">${saved.map(rec => `<button data-id="${esc(rec.id)}"><div class="stone">${stone(rec.cover || rec.id)}</div>
+                <div class="name">${esc(rec.title || rec.name || '')}</div><div class="sub">${plural('library.count', rec.count)}</div></button>`).join('')}</div></section>`);
+        for (const b of $('shelf').querySelectorAll('button')) {
+            const rec = saved.find(r => r.id === b.dataset.id);
+            b.onclick = () => load({ id: rec.id, key: rec.key }, { direct: true });
+        }
+    }
+    $('open-settings').onclick = () => openSheet('settings-sheet');
+}
+
+async function home() {
+    closeSheets();
+    await renderLibrary();
+}
+
+const rerender = () => {
+    if (view === 'arrival') renderArrival();
+    else if (view === 'pebbble') renderPebbble(true);
+    else if (view === 'library') renderLibrary();
+};
+
+// ---------- opening a pebbble ----------
 
 /** Read the key from the address, then remove it so it doesn't stay in history. */
 function takeFragment() {
@@ -31,87 +147,272 @@ function takeFragment() {
     return found;
 }
 
-// ---------- home: nothing tapped ----------
-
-async function home() {
-    p = header = null;
-    status('');
-    const saved = L.isOwned() ? await L.listPebbbles() : [];
-    if (!saved.length) { screens('empty'); return; }
-    screens('library');
-    $('lib-list').replaceChildren(...saved.sort((a, b) => b.savedAt - a.savedAt).map(rec => {
-        const row = document.createElement('div');
-        row.className = 'track';
-        row.innerHTML = '<div class="lib-name"><div class="cover thumb"></div><div><div class="title"></div><div class="muted"></div></div></div><div class="row"><button type="button" class="quiet"></button><button type="button"></button></div>';
-        row.querySelector('.thumb').innerHTML = pebbleCover(rec.cover || rec.id, { detail: 'thumb' });
-        row.querySelector('.title').textContent = rec.title || rec.name || t('owner.someone');
-        row.querySelector('.muted').textContent = t('library.count', { count: rec.count });
-        const [forget, open] = row.querySelectorAll('button');
-        forget.textContent = t('library.forget');
-        forget.onclick = async () => { if (confirm(t('library.forgetConfirm'))) { await L.forget(rec.id); home(); } };
-        open.textContent = t('player.play');
-        open.onclick = () => load({ id: rec.id, key: rec.key });
-        return row;
-    }));
-}
-
-// ---------- opening a pebbble ----------
-
-async function load(found) {
-    p = found; header = null; sealedHeader = null; pwKey = null;
-    screens();
-    status(t('player.opening'));
+/**
+ * direct: opened by a touch inside the app (library), so it can start playing at once.
+ * Otherwise (a tap on the stone opened the page) the arrival screen's Listen button
+ * gives the touch browsers require before sound.
+ */
+async function load(found, { direct = false } = {}) {
+    if (p && found.id !== p.id) stopPlayback();
+    p = found; header = null; sealedHeader = null; pwKey = null; offline = false; savedNote = '';
+    closeSheets();
+    showStatus(t('status.opening'));
 
     const cached = L.isOwned() ? await L.getPebbble(p.id) : null;
     const usable = cached && cached.key === p.key ? cached : null; // a rewritten stone brings a new key
+    known = !!usable;
 
-    let offline = false;
     try {
         sealedHeader = await R2.get(config.publicBase, `${p.id}/header`, { fresh: true });
-        if (!sealedHeader) { status(t('player.empty')); return; }
+        if (!sealedHeader) return showStatus(t('status.empty'));
     } catch {
-        if (!usable) { status(t('player.cannotOpen')); return; }
+        if (!usable) return showStatus(t('status.cannotOpen'));
         sealedHeader = usable.header;
         offline = true;
     }
     try {
         header = await F.openHeader(sealedHeader, p);
     } catch {
-        status(t('player.cannotOpen'));
-        return;
+        return showStatus(t('status.cannotOpen'));
     }
     // A remembered password key stops working if the creator changed the password: ask again.
     if (usable?.pwKey && await F.pwKeyStillValid(header, p.id, usable.pwKey)) pwKey = usable.pwKey;
 
-    status(offline ? t('player.offline') : '');
-    renderOwner();
-    if (!L.getMode()) askDevice();
-    else next();
+    if (direct) proceed();
+    else renderArrival();
 }
 
-function next() {
-    if (header.pw && !pwKey) {
-        $('hint').textContent = header.hint || t('lock.noHint');
-        screens('owner', 'lock');
+/** After Listen (or a direct open): device question, password, then the pebbble plays. */
+function proceed() {
+    if (!L.getMode()) return openSheet('device-sheet');
+    if (header.pw && !pwKey) return askPassword();
+    renderPebbble();
+    if (L.isOwned()) keep();
+    const first = openIdx()[0];
+    if (first !== undefined) { playAt(first); openPlayer(); }
+}
+
+for (const [id, mode] of [['device-yes', 'owned'], ['device-no', 'guest']]) {
+    $(id).onclick = async () => {
+        $(id).classList.add('selected');
+        await L.setMode(mode);
+        setTimeout(() => { $(id).classList.remove('selected'); closeSheets(); setTimeout(proceed, 200); }, 250);
+    };
+}
+
+function askPassword() {
+    $('hint').textContent = header.hint ? `“${header.hint}”` : '';
+    $('pw').value = '';
+    $('lock-msg').textContent = '';
+    openSheet('lock-sheet');
+    setTimeout(() => $('pw').focus(), 350);
+}
+
+$('unlock').onclick = async () => {
+    try {
+        pwKey = await F.unlock(header, p.id, $('pw').value);
+    } catch {
+        $('lock-msg').textContent = t('lock.wrong');
+        $('lock-sheet').classList.remove('shake'); void $('lock-sheet').offsetWidth; $('lock-sheet').classList.add('shake');
         return;
     }
-    screens('owner', 'list');
-    renderTracks();
-    if (L.isOwned()) keep();
+    closeSheets();
+    setTimeout(proceed, 200);
+};
+
+// ---------- owned phone: keep everything for offline ----------
+
+async function keep() {
+    const id = p.id;
+    await L.putPebbble({ id, key: p.key, pwKey, header: sealedHeader, title: header.name, cover: seed(), name: header.owner.name, count: header.tracks.length, savedAt: Date.now() });
+    // All voices, sleeping ones too, so a Christmas voice still wakes offline.
+    const wanted = header.tracks.map(tr => `${id}/${tr.f}`);
+    let done = 0;
+    for (const path of wanted) {
+        if (!(await L.getFile(path))) {
+            setSaved(t('status.saving', { done, total: wanted.length }));
+            try { await L.putFile(path, await R2.get(config.publicBase, path)); } catch { setSaved(''); return; }
+        }
+        done++;
+    }
+    for (const path of await L.filePaths(id)) if (!wanted.includes(path)) await L.deleteFile(path);
+    if (p?.id === id) setSaved(t('status.saved'));
+}
+function setSaved(text) { savedNote = text; if ($('saved-note')) $('saved-note').textContent = text; }
+
+// ---------- playback ----------
+
+async function playAt(i) {
+    const tr = header.tracks[i];
+    PL.idx = i;
+    PL.loading = true;
+    updatePlayer();
+    try {
+        const path = `${p.id}/${tr.f}`;
+        let sealed = L.isOwned() ? await L.getFile(path) : null;
+        sealed ??= await R2.get(config.publicBase, path);
+        const bytes = await F.openTrack(sealed, p.id, tr.f, await F.trackKey(tr, p.id, pwKey));
+        if (PL.idx !== i) return; // another voice was chosen meanwhile
+        if (PL.url) URL.revokeObjectURL(PL.url);
+        PL.url = URL.createObjectURL(new Blob([bytes], { type: tr.type }));
+        audio.src = PL.url;
+        audio.loop = PL.repeat === 'one';
+        PL.loading = false;
+        await audio.play().catch(() => toast(t('status.tapPlay'))); // blocked without a touch: stay paused
+    } catch {
+        PL.loading = false;
+        toast(t('status.couldNotPlay', { title: tr.title }));
+    }
+    updatePlayer();
+    setMediaSession();
 }
 
-function renderOwner() {
-    $('cover').innerHTML = pebbleCover(F.coverSeed(header, p.id));
-    $('pebbble-name').textContent = header.name || '';
-    $('pebbble-name').hidden = !header.name;
-    // Edit shows only on a device where the creator's writer library holds this pebbble.
-    $('edit').hidden = !isMine(p);
-    $('edit').href = `../writer/#${p.id}.${p.key}`;
-    const { name, contact } = header.owner;
-    $('owner-name').textContent = name || t('owner.someone');
-    $('owner-contact').textContent = contact;
-    $('owner-contact-line').hidden = !contact;
+function stopPlayback() {
+    audio.pause();
+    audio.removeAttribute('src');
+    if (PL.url) URL.revokeObjectURL(PL.url);
+    Object.assign(PL, { idx: -1, url: null, sleep: 0 });
+    renderMini();
 }
+
+const toggle = () => (audio.paused ? audio.play().catch(() => {}) : audio.pause());
+
+function skip(dir) {
+    const list = openIdx();
+    if (!list.length) return;
+    if (dir < 0 && audio.currentTime > 5) { audio.currentTime = 0; return; }
+    const pos = list.indexOf(PL.idx);
+    playAt(list[(pos + dir + list.length) % list.length]);
+}
+
+audio.addEventListener('ended', () => {
+    if (PL.sleep === -1) { PL.sleep = 0; toast(t('player.slept')); updatePlayer(); return; }
+    const list = openIdx(), pos = list.indexOf(PL.idx);
+    if (pos < list.length - 1) return playAt(list[pos + 1]);
+    if (PL.repeat === 'all' && list.length) return playAt(list[0]);
+    updatePlayer();
+});
+audio.addEventListener('timeupdate', () => { checkSleep(); updateProgress(); });
+for (const ev of ['play', 'pause']) audio.addEventListener(ev, () => { updatePlayer(); if (view === 'pebbble') renderPebbble(true); });
+
+function checkSleep() {
+    if (PL.sleep > 0 && Date.now() >= PL.sleepAt) {
+        PL.sleep = 0;
+        audio.pause();
+        toast(t('player.slept'));
+    }
+}
+setInterval(() => { if (PL.sleep > 0) { checkSleep(); updateSleepLabel(); } }, 1000);
+
+// ---------- player UI ----------
+
+function updateProgress() {
+    const d = audio.duration, now = audio.currentTime;
+    const pct = d ? Math.min(1, now / d) * 100 : 0;
+    $('fill').style.width = pct + '%';
+    $('dot').style.left = pct + '%';
+    $('mini-line').style.width = pct + '%';
+    $('t-now').textContent = mmss(now);
+    $('t-left').textContent = '-' + mmss(Math.max(0, (d || 0) - now));
+}
+
+function updateSleepLabel() {
+    const left = Math.max(0, (PL.sleepAt - Date.now()) / 1000);
+    $('sleep').innerHTML = `${ICON.moon}<span>${PL.sleep > 0 ? t('player.sleepIn', { time: mmss(left) }) : PL.sleep === -1 ? t('player.sleepEnd') : t('player.sleep')}</span>`;
+    $('sleep').classList.toggle('active', PL.sleep !== 0);
+}
+
+function updatePlayer() {
+    if (!header || PL.idx < 0) return renderMini();
+    const tr = header.tracks[PL.idx];
+    const list = openIdx();
+    const playing = !audio.paused;
+    $('pl-from').textContent = header.name || '';
+    $('pl-title').textContent = tr.title;
+    $('pl-sub').textContent = t('player.of', { name: header.name || header.owner.name || '', n: list.indexOf(PL.idx) + 1, total: list.length }).replace(/^ · /, '');
+    const s = seed();
+    if ($('pl-stone').dataset.seed !== s) { $('pl-stone').innerHTML = stone(s); $('mini-stone').innerHTML = stone(s, 'thumb'); $('pl-stone').dataset.seed = s; }
+    $('pl-stone').classList.toggle('breathing', playing);
+    $('play').innerHTML = playing ? ICON.pause : ICON.play;
+    $('play').setAttribute('aria-label', t(playing ? 'player.pause' : 'player.play'));
+    $('mini-play').innerHTML = playing ? ICON.pauseSmall : ICON.playSmall;
+    $('mini-title').textContent = tr.title;
+    $('mini-sub').textContent = header.name || '';
+    $('repeat').innerHTML = `${ICON.repeat}<span>${t({ off: 'player.repeatOff', all: 'player.repeatAll', one: 'player.repeatOne' }[PL.repeat])}</span>`;
+    $('repeat').classList.toggle('active', PL.repeat !== 'off');
+    updateSleepLabel();
+    updateProgress();
+    renderMini();
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
+}
+
+function renderMini() {
+    const anySheet = [...document.querySelectorAll('.sheet')].some(s => s.classList.contains('on'));
+    $('mini').classList.toggle('on', PL.idx >= 0 && !anySheet && (view === 'pebbble' || view === 'library'));
+}
+
+function openPlayer() { updatePlayer(); openSheet('player'); $('scrim').classList.remove('on'); renderMini(); }
+$('collapse').onclick = () => { closeSheets(); if (view === 'pebbble') renderPebbble(true); };
+$('mini-open').onclick = e => { if (!e.target.closest('#mini-play')) openPlayer(); };
+$('mini-play').onclick = toggle;
+$('play').onclick = toggle;
+$('prev').onclick = () => skip(-1);
+$('next').onclick = () => skip(1);
+$('progress').onclick = e => {
+    if (!audio.duration) return;
+    const r = $('progress').getBoundingClientRect();
+    audio.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * audio.duration;
+};
+$('repeat').onclick = () => {
+    PL.repeat = { off: 'all', all: 'one', one: 'off' }[PL.repeat];
+    audio.loop = PL.repeat === 'one';
+    updatePlayer();
+};
+$('sleep').onclick = () => {
+    const box = $('sleep-choices');
+    box.hidden = !box.hidden;
+    const choices = [[0, t('player.off')], [15, t('player.min', { n: 15 })], [30, t('player.min', { n: 30 })], [45, t('player.min', { n: 45 })], [60, t('player.hour')], [-1, t('player.endOfVoice')]];
+    box.innerHTML = choices.map(([m, l]) => `<button data-m="${m}" class="${PL.sleep === m ? 'on' : ''}">${esc(l)}</button>`).join('');
+    for (const b of box.querySelectorAll('button')) b.onclick = () => {
+        PL.sleep = +b.dataset.m;
+        PL.sleepAt = PL.sleep > 0 ? Date.now() + PL.sleep * 60000 : 0;
+        box.hidden = true;
+        updateSleepLabel();
+        if (PL.sleep) toast(PL.sleep > 0 ? t('player.sleepSet', { time: b.textContent }) : t('player.sleepSetEnd'));
+    };
+};
+
+// Lock screen / headphones controls, with the stone as artwork.
+const artwork = new Map();
+async function coverPng(s) {
+    if (artwork.has(s)) return artwork.get(s);
+    const img = new Image();
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(stone(s));
+    await img.decode();
+    const c = Object.assign(document.createElement('canvas'), { width: 512, height: 512 });
+    const g = c.getContext('2d');
+    g.fillStyle = '#ecebe7'; g.fillRect(0, 0, 512, 512);
+    g.drawImage(img, 56, 56, 400, 400);
+    const url = URL.createObjectURL(await new Promise(r => c.toBlob(r, 'image/png')));
+    artwork.set(s, url);
+    return url;
+}
+async function setMediaSession() {
+    if (!('mediaSession' in navigator) || PL.idx < 0) return;
+    const tr = header.tracks[PL.idx];
+    let art = [];
+    try { art = [{ src: await coverPng(seed()), sizes: '512x512', type: 'image/png' }]; } catch {}
+    navigator.mediaSession.metadata = new MediaMetadata({ title: tr.title, artist: header.owner.name || '', album: header.name || '', artwork: art });
+}
+if ('mediaSession' in navigator) {
+    const ms = navigator.mediaSession;
+    ms.setActionHandler('play', () => audio.play());
+    ms.setActionHandler('pause', () => audio.pause());
+    ms.setActionHandler('previoustrack', () => skip(-1));
+    ms.setActionHandler('nexttrack', () => skip(1));
+}
+
+// ---------- this pebbble: edit / forget / settings ----------
 
 function isMine({ id, key }) {
     try {
@@ -120,142 +421,98 @@ function isMine({ id, key }) {
     } catch { return false; }
 }
 
-// ---------- device question (asked once) ----------
-
-let choice = null;
-function askDevice() {
-    choice = null;
-    $('device-text').textContent = '';
-    $('device-continue').disabled = true;
-    for (const b of [$('device-yes'), $('device-no')]) b.classList.add('quiet');
-    screens('owner', 'device');
+function openMenu() {
+    $('menu-stone').innerHTML = stone(seed(), 'thumb');
+    $('menu-name').textContent = header.name || header.owner.name || '';
+    $('m-edit').hidden = !isMine(p);
+    $('m-edit').innerHTML = `${ICON.pen}<span><b>${t('menu.edit')}</b><span>${t('menu.editText')}</span></span>`;
+    $('m-forget').hidden = !L.isOwned();
+    resetForget();
+    $('m-settings').innerHTML = `${ICON.settings}<span><b>${t('menu.settings')}</b><span>${t('menu.settingsText')}</span></span>`;
+    openSheet('menu-sheet');
 }
-function pick(owned) {
-    choice = owned ? 'owned' : 'guest';
-    $('device-yes').classList.toggle('quiet', !owned);
-    $('device-no').classList.toggle('quiet', owned);
-    $('device-text').textContent = t(owned ? 'device.textPersonal' : 'device.textGuest');
-    $('device-continue').disabled = false;
+function resetForget() {
+    $('m-forget').classList.remove('confirm');
+    $('m-forget').innerHTML = `${ICON.leaf}<span><b>${t('menu.forget')}</b><span>${t('menu.forgetText')}</span></span>`;
 }
-$('device-yes').onclick = () => pick(true);
-$('device-no').onclick = () => pick(false);
-$('device-continue').onclick = async () => {
-    await L.setMode(choice);
-    $('mode').value = choice;
-    next();
-};
-
-// ---------- password ----------
-
-$('unlock').onclick = async () => {
-    $('lock-msg').textContent = '';
-    try {
-        pwKey = await F.unlock(header, p.id, $('pw').value);
-    } catch {
-        $('lock-msg').textContent = t('lock.wrong');
+$('m-edit').onclick = () => { location.href = `../writer/#${p.id}.${p.key}`; };
+$('m-settings').onclick = () => openSheet('settings-sheet');
+$('m-forget').onclick = async () => {
+    const b = $('m-forget');
+    if (!b.classList.contains('confirm')) {
+        b.classList.add('confirm');
+        b.innerHTML = `${ICON.leaf}<span><b>${t('menu.forgetConfirm', { name: esc(header.name || header.owner.name || '') })}</b><span>${t('menu.forgetConfirmText')}</span></span>`;
         return;
     }
-    $('pw').value = '';
-    next();
+    const name = header.name || header.owner.name || '';
+    stopPlayback();
+    await L.forget(p.id);
+    p = header = null;
+    await home();
+    toast(t('menu.forgotten', { name }));
 };
-
-// ---------- tracks ----------
-
-const fmt = d => d.toLocaleDateString(language(), { day: 'numeric', month: 'long' });
-
-function renderTracks() {
-    $('tracks').replaceChildren(...header.tracks.map(tr => {
-        const w = F.windowStatus(tr.window);
-        const row = document.createElement('div');
-        row.className = 'track';
-        row.innerHTML = '<div><div class="title"></div><div class="muted"></div></div>';
-        row.querySelector('.title').textContent = tr.title;
-        const note = row.querySelector('.muted');
-        if (w.state === 'open') {
-            note.textContent = w.closes ? t('dateLock.availableUntil', { date: fmt(w.closes) }) : '';
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.textContent = t('player.play');
-            btn.onclick = () => play(tr, btn);
-            row.append(btn);
-        } else {
-            note.textContent = w.state === 'locked' ? t('dateLock.availableOn', { date: fmt(w.opens) }) : t('dateLock.expired');
-        }
-        return row;
-    }));
-    if (!header.tracks.length) $('tracks').innerHTML = `<p class="muted">${t('player.empty')}</p>`;
-}
-
-async function play(tr, btn) {
-    btn.disabled = true;
-    const label = btn.textContent;
-    btn.textContent = '…';
-    try {
-        const path = `${p.id}/${tr.f}`;
-        let sealed = L.isOwned() ? await L.getFile(path) : null;
-        sealed ??= await R2.get(config.publicBase, path);
-        const audio = await F.openTrack(sealed, p.id, tr.f, await F.trackKey(tr, p.id, pwKey));
-        if (currentUrl) URL.revokeObjectURL(currentUrl);
-        currentUrl = URL.createObjectURL(new Blob([audio], { type: tr.type }));
-        $('audio').src = currentUrl;
-        $('audio').hidden = false;
-        await $('audio').play();
-    } catch {
-        status(t('player.couldNotPlay', { title: tr.title }));
-    } finally {
-        btn.disabled = false;
-        btn.textContent = label;
-    }
-}
-
-// ---------- owned device: keep everything for offline ----------
-
-async function keep() {
-    const id = p.id;
-    await L.putPebbble({ id, key: p.key, pwKey, header: sealedHeader, title: header.name, cover: F.coverSeed(header, id), name: header.owner.name, count: header.tracks.length, savedAt: Date.now() });
-
-    // All tracks, including ones not open yet, so a Christmas message still opens offline.
-    const wanted = header.tracks.map(tr => `${id}/${tr.f}`);
-    const note = $('saved-note');
-    note.hidden = false;
-    let done = 0;
-    for (const path of wanted) {
-        if (!(await L.getFile(path))) {
-            note.textContent = t('library.saving', { done, total: wanted.length });
-            try { await L.putFile(path, await R2.get(config.publicBase, path)); } catch { note.hidden = true; return; }
-        }
-        done++;
-    }
-    for (const path of await L.filePaths(id)) if (!wanted.includes(path)) await L.deleteFile(path);
-    if (p?.id === id) note.textContent = t('library.saved');
-}
 
 // ---------- settings ----------
 
-$('lang').replaceChildren(...Object.entries(LANGUAGES).map(([code, name]) => new Option(name, code)));
-$('lang').onchange = async () => {
-    await setLanguage($('lang').value);
-    if (header && !$('list').hidden) renderTracks();
-    else if (!$('library').hidden) home();
-    if (!$('device').hidden && choice) pick(choice === 'owned');
+function renderSettings() {
+    $('langs').innerHTML = Object.entries(LANGUAGES).map(([code, name]) => `<button data-lang="${code}" class="${code === language() ? 'on' : ''}">${name}</button>`).join('');
+    for (const b of $('langs').querySelectorAll('button')) b.onclick = async () => {
+        await setLanguage(b.dataset.lang);
+        renderSettings();
+        rerender();
+        updatePlayer();
+    };
+    $('set-mine').classList.toggle('selected', L.getMode() === 'owned');
+    $('set-notmine').classList.toggle('selected', L.getMode() === 'guest');
+}
+$('set-mine').onclick = async () => {
+    await L.setMode('owned');
+    renderSettings();
+    toast(t('settings.nowMine'));
+    if (header && view === 'pebbble') { renderPebbble(true); keep(); }
 };
-
-$('mode').onchange = async () => {
-    const mode = $('mode').value;
-    if (mode === 'guest' && L.isOwned() && !confirm(t('settings.clearConfirm'))) { $('mode').value = 'owned'; return; }
-    await L.setMode(mode);
-    $('saved-note').hidden = true;
-    if (mode === 'owned' && header && !$('list').hidden) keep();
-    if (!header) home();
+$('set-notmine').onclick = async () => {
+    if (L.isOwned() && !confirm(t('settings.clearConfirm'))) return;
+    await L.setMode('guest');
+    savedNote = '';
+    renderSettings();
+    toast(t('settings.nowNotMine'));
+    if (view === 'pebbble') renderPebbble(true);
+    if (view === 'library') renderLibrary();
 };
-
 $('clear').onclick = async () => {
     if (!confirm(t('settings.clearConfirm'))) return;
     await L.clearAll();
-    $('settings-msg').textContent = t('settings.dataCleared');
-    $('saved-note').hidden = true;
-    if (!header) home();
+    savedNote = '';
+    toast(t('settings.cleared'));
+    if (view === 'library') renderLibrary();
+    if (view === 'pebbble') renderPebbble(true);
 };
+
+// ---------- sheets & toast ----------
+
+function openSheet(id) {
+    closeSheets(true);
+    $('scrim').classList.add('on');
+    $(id).classList.add('on');
+    if (id === 'settings-sheet') renderSettings();
+    renderMini();
+}
+function closeSheets(keepScrim) {
+    for (const s of document.querySelectorAll('.sheet')) s.classList.remove('on');
+    $('sleep-choices').hidden = true;
+    if (!keepScrim) $('scrim').classList.remove('on');
+    renderMini();
+}
+$('scrim').onclick = () => closeSheets();
+
+let toastTimer;
+function toast(msg) {
+    $('toast').textContent = msg;
+    $('toast').classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => $('toast').classList.remove('on'), 2600);
+}
 
 // ---------- start ----------
 
@@ -265,9 +522,6 @@ window.addEventListener('hashchange', () => { const f = takeFragment(); if (f) l
 navigator.serviceWorker?.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 
 await initI18n();
-$('lang').value = language();
-$('mode').value = L.getMode() || '';
-
 const first = takeFragment();
 if (first) load(first);
 else home();

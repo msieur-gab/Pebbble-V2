@@ -204,6 +204,23 @@ $('t-rec').onclick = async () => {
     $('t-rec').textContent = '■ Stop';
 };
 
+/** Length of an audio file in seconds (0 if the browser can't tell). */
+function audioDuration(blob) {
+    return new Promise(resolve => {
+        const a = new Audio();
+        const url = URL.createObjectURL(blob);
+        const done = d => { URL.revokeObjectURL(url); resolve(isFinite(d) ? Math.round(d) : 0); };
+        a.onloadedmetadata = () => {
+            if (isFinite(a.duration)) return done(a.duration);
+            // Some recordings report Infinity until the end is found.
+            a.ontimeupdate = () => { a.ontimeupdate = null; done(a.duration); };
+            a.currentTime = 1e9;
+        };
+        a.onerror = () => done(0);
+        a.src = url;
+    });
+}
+
 $('t-add').onclick = () => {
     const title = $('t-title').value.trim();
     const blob = $('t-file').files[0] || recorded;
@@ -217,7 +234,7 @@ $('t-add').onclick = () => {
         if (!mmdd.test(a) || !mmdd.test(b)) { $('save-msg').textContent = 'Use MM-DD for yearly dates, e.g. 12-24.'; return; }
         window = { every: `${a}..${b}` };
     }
-    s.pending.push({ title, blob, type: blob.type || 'audio/webm', window });
+    s.pending.push({ title, blob, type: blob.type || 'audio/webm', window, duration: audioDuration(blob) }); // measured in the background
     $('t-title').value = ''; $('t-file').value = ''; recorded = null; $('t-rec').textContent = '● Record';
     $('save-msg').textContent = '';
     renderTracks();
@@ -272,7 +289,7 @@ $('save').onclick = async () => {
             const file = F.newFileName();
             const { sealed, key } = await F.sealTrack(new Uint8Array(await t.blob.arrayBuffer()), p.id, file);
             await R2.put(c, `${p.id}/${file}`, sealed, { cacheControl: 'public, max-age=31536000, immutable' });
-            await F.addTrack(header, p.id, { file, title: t.title, type: t.type, window: t.window, key }, s.pwKey);
+            await F.addTrack(header, p.id, { file, title: t.title, type: t.type, window: t.window, duration: await t.duration, key }, s.pwKey);
         }
         s.pending = [];
 

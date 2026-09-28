@@ -1,56 +1,104 @@
 {
-  "player": {
-    "tap": "将你的石头靠近手机即可打开。",
-    "iphoneHint": "iPhone：保持屏幕解锁，将石头靠近手机顶部，然后点击通知。",
-    "opening": "正在打开你的石头…",
-    "empty": "这颗石头还没有消息。",
-    "cannotOpen": "无法打开这颗石头。",
-    "offline": "离线 — 显示已保存的版本。",
-    "play": "播放",
-    "couldNotPlay": "无法播放“{title}”。",
-    "edit": "编辑"
+  "arrival": {
+    "found": "你找到了一颗石头",
+    "back": "欢迎回来",
+    "listen": "聆听",
+    "voices_one": "里面有 1 段声音",
+    "voices": "里面有 {count} 段声音",
+    "asleep": "，还有 {count} 段在沉睡",
+    "owner": "这颗石头属于 {name}。",
+    "write": "如果你捡到了它，请写信给 {contact}。"
   },
-  "owner": {
-    "belongsTo": "这颗石头属于",
-    "someone": "某人",
-    "contact": "如果你捡到了它，请联系"
+  "page": {
+    "meta": "{name} · {count} 段声音",
+    "meta_one": "{name} · 1 段声音",
+    "foot": "属于 {name}",
+    "footContact": "捡到请联系 {contact}",
+    "myPebbbles": "我的石头"
+  },
+  "voice": {
+    "wakes": "{date} 醒来",
+    "until": "至 {date}",
+    "quiet": "已经安静了"
+  },
+  "device": {
+    "title": "这是你的手机吗？",
+    "lead": "只问一次，之后可以在设置中更改。",
+    "yes": "是的，是我的",
+    "yesText": "声音会保存在这部手机上，没有网络也能听。",
+    "no": "不是，我只是听听",
+    "noText": "什么都不保存。再次触碰石头即可重新聆听。"
   },
   "lock": {
-    "hint": "提示：",
-    "noHint": "（无提示）",
+    "title": "这颗石头上了锁",
+    "lead": "它的声音用一个你知道的词打开。",
     "password": "密码",
     "open": "打开",
     "wrong": "不太对。再看看提示。"
   },
-  "device": {
-    "question": "这是我的个人设备",
-    "yes": "是",
-    "no": "否",
-    "textPersonal": "声音将安全保存在你的设备上。随时收听，离线也可以。",
-    "textGuest": "声音将播放一次，不留痕迹。随时再次扫描你的石头即可重新聆听。",
-    "continue": "继续",
-    "owned": "我的设备",
-    "guest": "共享设备"
+  "player": {
+    "of": "{name} · 第 {n}/{total} 段",
+    "repeatOff": "不重复",
+    "repeatAll": "全部重复",
+    "repeatOne": "重复这段",
+    "sleep": "睡眠定时",
+    "sleepIn": "{time} 后暂停",
+    "sleepEnd": "这段结束后",
+    "off": "关",
+    "min": "{n} 分钟",
+    "hour": "1 小时",
+    "endOfVoice": "这段结束",
+    "sleepSet": "{time} 后暂停",
+    "sleepSetEnd": "这段结束后停止",
+    "slept": "睡眠定时已暂停。晚安。",
+    "close": "关闭播放器",
+    "play": "播放",
+    "pause": "暂停",
+    "prev": "上一段",
+    "next": "下一段"
   },
   "library": {
-    "title": "你的石头",
-    "count": "{count} 条消息",
-    "forget": "移除",
-    "forgetConfirm": "要从此设备移除这颗石头及其消息吗？",
-    "saving": "正在离线保存（{done}/{total}）…",
-    "saved": "已保存供离线使用"
+    "title": "我的石头",
+    "count": "{count} 段声音",
+    "count_one": "1 段声音",
+    "emptyTitle": "把石头靠近",
+    "emptyText": "用石头轻触手机背面，它的声音会在这里打开。",
+    "iphone": "iPhone：保持屏幕解锁，将石头靠近手机顶部，然后点击通知。"
   },
-  "dateLock": {
-    "availableOn": "{date} 可用",
-    "availableUntil": "可用至 {date}",
-    "expired": "已过期"
+  "menu": {
+    "label": "这颗石头",
+    "edit": "编辑这颗石头",
+    "editText": "添加声音、重命名、更改密码。仅在你的手机上。",
+    "forget": "在这部手机上忘记",
+    "forgetText": "它的声音会离开这部手机。石头仍保存着它们：再次触碰即可找回。",
+    "forgetConfirm": "再点一次以忘记“{name}”",
+    "forgetConfirmText": "石头上不会有任何变化。",
+    "forgotten": "已在这部手机上忘记 {name}",
+    "settings": "设置",
+    "settingsText": "语言、这部手机、已保存的声音。"
   },
   "settings": {
     "title": "设置",
     "language": "语言",
-    "deviceMode": "设备模式",
-    "clearData": "清除已保存的消息",
-    "clearConfirm": "确定吗？这将删除所有已保存的消息。",
-    "dataCleared": "数据已清除"
+    "phone": "这部手机",
+    "mine": "我的",
+    "mineText": "在这里保存声音，离线也能听。",
+    "notMine": "不是我的",
+    "notMineText": "什么都不保存。关闭后全部消失。",
+    "clear": "从这部手机移除已保存的声音",
+    "clearConfirm": "要从这部手机移除已保存的声音吗？",
+    "cleared": "已移除保存的声音",
+    "nowMine": "声音将保存在这部手机上",
+    "nowNotMine": "这部手机上不保存任何内容"
+  },
+  "status": {
+    "opening": "正在打开你的石头…",
+    "cannotOpen": "无法打开这颗石头。",
+    "empty": "这颗石头还没有声音。",
+    "offline": "离线 — 已保存的声音。",
+    "couldNotPlay": "无法播放“{title}”。",
+    "saving": "正在离线保存声音（{done}/{total}）…",
+    "saved": "已保存在这部手机上",
+    "tapPlay": "点击播放即可聆听"
   }
 }

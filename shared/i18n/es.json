@@ -1,56 +1,104 @@
 {
-  "player": {
-    "tap": "Acerca tu pebbble al teléfono para abrirlo.",
-    "iphoneHint": "iPhone: mantén la pantalla desbloqueada, acerca la piedra a la parte superior del teléfono y toca la notificación.",
-    "opening": "Abriendo tu pebbble…",
-    "empty": "Este pebbble aún no tiene mensajes.",
-    "cannotOpen": "No se pudo abrir esta piedra.",
-    "offline": "Sin conexión — versión guardada.",
-    "play": "Escuchar",
-    "couldNotPlay": "No se pudo reproducir «{title}».",
-    "edit": "Editar"
+  "arrival": {
+    "found": "Encontraste un pebbble",
+    "back": "Bienvenido de nuevo",
+    "listen": "Escuchar",
+    "voices_one": "1 voz dentro",
+    "voices": "{count} voces dentro",
+    "asleep": ", {count} aún dormidas",
+    "owner": "Este pebbble pertenece a {name}.",
+    "write": "Si lo encontraste, escribe a {contact}."
   },
-  "owner": {
-    "belongsTo": "Este pebbble pertenece a",
-    "someone": "alguien",
-    "contact": "Si lo encontraste, por favor contacta"
+  "page": {
+    "meta": "{name} · {count} voces",
+    "meta_one": "{name} · 1 voz",
+    "foot": "Pertenece a {name}",
+    "footContact": "si lo encuentras, {contact}",
+    "myPebbbles": "Mis pebbbles"
   },
-  "lock": {
-    "hint": "Pista:",
-    "noHint": "(sin pista)",
-    "password": "Contraseña",
-    "open": "Abrir",
-    "wrong": "No exactamente. Mira la pista otra vez."
+  "voice": {
+    "wakes": "Despierta el {date}",
+    "until": "Hasta el {date}",
+    "quiet": "Se ha callado"
   },
   "device": {
-    "question": "Este es mi dispositivo personal",
-    "yes": "Sí",
-    "no": "No",
-    "textPersonal": "Las voces se guardarán de forma segura en tu dispositivo. Escucha cuando quieras, incluso sin conexión.",
-    "textGuest": "Las voces se reproducirán una vez, sin dejar rastro. Escanea tu piedra nuevamente cuando quieras escuchar de nuevo.",
-    "continue": "Continuar",
-    "owned": "Mi dispositivo",
-    "guest": "Dispositivo compartido"
+    "title": "¿Es tu teléfono?",
+    "lead": "Se pregunta una vez. Puedes cambiarlo en ajustes.",
+    "yes": "Sí, es mío",
+    "yesText": "Las voces se quedan en este teléfono, incluso sin internet.",
+    "no": "No, solo escucho",
+    "noText": "No se guarda nada. Toca la piedra otra vez para volver a escuchar."
+  },
+  "lock": {
+    "title": "Este pebbble está cerrado",
+    "lead": "Sus voces se abren con una palabra que conoces.",
+    "password": "Contraseña",
+    "open": "Abrir",
+    "wrong": "No exactamente. Lee la pista otra vez."
+  },
+  "player": {
+    "of": "{name} · {n} de {total}",
+    "repeatOff": "Sin repetir",
+    "repeatAll": "Repetir todo",
+    "repeatOne": "Repetir esta voz",
+    "sleep": "Temporizador",
+    "sleepIn": "Pausa en {time}",
+    "sleepEnd": "Tras esta voz",
+    "off": "No",
+    "min": "{n} min",
+    "hour": "1 hora",
+    "endOfVoice": "Fin de la voz",
+    "sleepSet": "Pausa en {time}",
+    "sleepSetEnd": "Se detiene tras esta voz",
+    "slept": "Pausado por el temporizador. Buenas noches.",
+    "close": "Cerrar reproductor",
+    "play": "Reproducir",
+    "pause": "Pausa",
+    "prev": "Anterior",
+    "next": "Siguiente"
   },
   "library": {
-    "title": "Tus pebbbles",
-    "count": "{count} mensajes",
-    "forget": "Olvidar",
-    "forgetConfirm": "¿Quitar este pebbble y sus mensajes de este dispositivo?",
-    "saving": "Guardando sin conexión ({done}/{total})…",
-    "saved": "Guardado sin conexión"
+    "title": "Mis pebbbles",
+    "count": "{count} voces",
+    "count_one": "1 voz",
+    "emptyTitle": "Acerca un pebbble",
+    "emptyText": "Apoya la piedra en la parte trasera del teléfono. Sus voces se abren aquí.",
+    "iphone": "iPhone: mantén la pantalla desbloqueada, acerca la piedra a la parte superior y toca la notificación."
   },
-  "dateLock": {
-    "availableOn": "Disponible el {date}",
-    "availableUntil": "Disponible hasta {date}",
-    "expired": "Ya no disponible"
+  "menu": {
+    "label": "Este pebbble",
+    "edit": "Editar este pebbble",
+    "editText": "Añadir voces, renombrar, cambiar la contraseña. Solo en tu teléfono.",
+    "forget": "Olvidar en este teléfono",
+    "forgetText": "Sus voces salen de este teléfono. La piedra las guarda: tócala para recuperarlas.",
+    "forgetConfirm": "Toca otra vez para olvidar «{name}»",
+    "forgetConfirmText": "Nada cambia en la piedra.",
+    "forgotten": "{name} olvidado en este teléfono",
+    "settings": "Ajustes",
+    "settingsText": "Idioma, este teléfono, voces guardadas."
   },
   "settings": {
-    "title": "Configuración",
+    "title": "Ajustes",
     "language": "Idioma",
-    "deviceMode": "Modo de dispositivo",
-    "clearData": "Borrar mensajes guardados",
-    "clearConfirm": "¿Estás seguro? Esto eliminará todos los mensajes guardados.",
-    "dataCleared": "Datos borrados"
+    "phone": "Este teléfono",
+    "mine": "Mío",
+    "mineText": "Guarda las voces aquí para escuchar sin conexión.",
+    "notMine": "No es mío",
+    "notMineText": "No guarda nada. Todo desaparece al cerrar.",
+    "clear": "Quitar las voces guardadas de este teléfono",
+    "clearConfirm": "¿Quitar las voces guardadas de este teléfono?",
+    "cleared": "Voces guardadas quitadas",
+    "nowMine": "Las voces se guardarán en este teléfono",
+    "nowNotMine": "No se guarda nada en este teléfono"
+  },
+  "status": {
+    "opening": "Abriendo tu pebbble…",
+    "cannotOpen": "No se pudo abrir esta piedra.",
+    "empty": "Este pebbble aún no tiene voces.",
+    "offline": "Sin conexión — las voces guardadas.",
+    "couldNotPlay": "No se pudo reproducir «{title}».",
+    "saving": "Guardando voces sin conexión ({done}/{total})…",
+    "saved": "Guardado en este teléfono",
+    "tapPlay": "Toca reproducir para escuchar"
   }
 }

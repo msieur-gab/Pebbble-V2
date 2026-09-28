@@ -1,56 +1,104 @@
 {
-  "player": {
-    "tap": "Tap your pebbble with the phone to open it.",
-    "iphoneHint": "iPhone: keep the screen unlocked, hold the stone near the top of the phone, then tap the notification.",
-    "opening": "Opening your pebbble…",
-    "empty": "This pebbble has no messages yet.",
-    "cannotOpen": "This stone could not be opened.",
-    "offline": "Offline — showing the saved version.",
-    "play": "Play",
-    "couldNotPlay": "Could not play “{title}”.",
-    "edit": "Edit"
+  "arrival": {
+    "found": "You found a pebbble",
+    "back": "Welcome back",
+    "listen": "Listen",
+    "voices_one": "1 voice inside",
+    "voices": "{count} voices inside",
+    "asleep": ", {count} still asleep",
+    "owner": "This pebbble belongs to {name}.",
+    "write": "If you found it, please write to {contact}."
   },
-  "owner": {
-    "belongsTo": "This pebbble belongs to",
-    "someone": "someone",
-    "contact": "If you found it, please contact"
+  "page": {
+    "meta": "{name} · {count} voices",
+    "meta_one": "{name} · 1 voice",
+    "foot": "Belongs to {name}",
+    "footContact": "if found, {contact}",
+    "myPebbbles": "My pebbbles"
   },
-  "lock": {
-    "hint": "Hint:",
-    "noHint": "(no hint)",
-    "password": "Password",
-    "open": "Open",
-    "wrong": "Not quite. Look at the hint again."
+  "voice": {
+    "wakes": "Wakes on {date}",
+    "until": "Until {date}",
+    "quiet": "Has gone quiet"
   },
   "device": {
-    "question": "This is my personal device",
-    "yes": "Yes",
-    "no": "No",
-    "textPersonal": "The voices will be securely saved on your device. Listen anytime, even offline.",
-    "textGuest": "The voices will play once, leaving no trace. Scan your stone again anytime to listen once more.",
-    "continue": "Continue",
-    "owned": "My Device",
-    "guest": "Shared Device"
+    "title": "Is this your phone?",
+    "lead": "Asked once. You can change it later in settings.",
+    "yes": "Yes, it's mine",
+    "yesText": "The voices stay on this phone, even without internet.",
+    "no": "No, I'm just listening",
+    "noText": "Nothing is kept. Tap the stone again to listen again."
+  },
+  "lock": {
+    "title": "This pebbble is locked",
+    "lead": "Its voices open with a word you know.",
+    "password": "Password",
+    "open": "Open",
+    "wrong": "Not quite. Read the hint again."
+  },
+  "player": {
+    "of": "{name} · {n} of {total}",
+    "repeatOff": "Repeat off",
+    "repeatAll": "Repeat all",
+    "repeatOne": "Repeat this voice",
+    "sleep": "Sleep timer",
+    "sleepIn": "Sleep in {time}",
+    "sleepEnd": "After this voice",
+    "off": "Off",
+    "min": "{n} min",
+    "hour": "1 hour",
+    "endOfVoice": "End of voice",
+    "sleepSet": "Pauses in {time}",
+    "sleepSetEnd": "Stops after this voice",
+    "slept": "Paused by the sleep timer. Good night.",
+    "close": "Close player",
+    "play": "Play",
+    "pause": "Pause",
+    "prev": "Previous",
+    "next": "Next"
   },
   "library": {
-    "title": "Your pebbbles",
-    "count": "{count} messages",
-    "forget": "Forget",
-    "forgetConfirm": "Remove this pebbble and its messages from this device?",
-    "saving": "Saving for offline ({done}/{total})…",
-    "saved": "Saved for offline"
+    "title": "My pebbbles",
+    "count": "{count} voices",
+    "count_one": "1 voice",
+    "emptyTitle": "Hold a pebbble close",
+    "emptyText": "Touch the back of your phone with the stone. Its voices open here.",
+    "iphone": "iPhone: keep the screen unlocked, hold the stone near the top, then tap the notification."
   },
-  "dateLock": {
-    "availableOn": "Available on {date}",
-    "availableUntil": "Available until {date}",
-    "expired": "No longer available"
+  "menu": {
+    "label": "This pebbble",
+    "edit": "Edit this pebbble",
+    "editText": "Add voices, rename, change the password. Only on your phone.",
+    "forget": "Forget on this phone",
+    "forgetText": "Its voices leave this phone. The stone keeps them: tap it to bring them back.",
+    "forgetConfirm": "Tap again to forget “{name}”",
+    "forgetConfirmText": "Nothing changes on the stone.",
+    "forgotten": "{name} forgotten on this phone",
+    "settings": "Settings",
+    "settingsText": "Language, this phone, saved voices."
   },
   "settings": {
     "title": "Settings",
     "language": "Language",
-    "deviceMode": "Device Mode",
-    "clearData": "Clear saved messages",
-    "clearConfirm": "Are you sure? This will remove all saved messages.",
-    "dataCleared": "All data cleared"
+    "phone": "This phone",
+    "mine": "Mine",
+    "mineText": "Keeps voices here for listening offline.",
+    "notMine": "Not mine",
+    "notMineText": "Keeps nothing. Everything is gone when closed.",
+    "clear": "Remove saved voices from this phone",
+    "clearConfirm": "Remove the saved voices from this phone?",
+    "cleared": "Saved voices removed",
+    "nowMine": "Voices will be kept on this phone",
+    "nowNotMine": "Nothing is kept on this phone"
+  },
+  "status": {
+    "opening": "Opening your pebbble…",
+    "cannotOpen": "This stone could not be opened.",
+    "empty": "This pebbble has no voices yet.",
+    "offline": "Offline — the saved voices.",
+    "couldNotPlay": "Could not play “{title}”.",
+    "saving": "Keeping voices for offline ({done}/{total})…",
+    "saved": "Kept on this phone",
+    "tapPlay": "Tap play to listen"
   }
 }

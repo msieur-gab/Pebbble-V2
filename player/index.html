@@ -1,82 +1,111 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="light">
-    <meta name="referrer" content="no-referrer">
-    <meta name="theme-color" content="#ecebe7">
-    <title>Pebbble</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" href="icons/icon-192.png">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <link rel="stylesheet" href="../shared/base.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#ecebe7">
+<title>Pebbble</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="player.css">
 </head>
 <body>
-<main>
-    <h1>Pebbble</h1>
 
-    <section id="empty" hidden>
-        <p data-i18n="player.tap"></p>
-        <p class="muted" data-i18n="player.iphoneHint"></p>
-    </section>
+<!-- Views are drawn into #app by player.js: arrival, pebbble page, library. -->
+<div class="app" id="app"></div>
 
-    <p id="status" class="muted" hidden></p>
+<div class="scrim" id="scrim"></div>
 
-    <section id="library" hidden>
-        <h2 data-i18n="library.title"></h2>
-        <div id="lib-list"></div>
-    </section>
+<!-- First time on this phone -->
+<div class="sheet" id="device-sheet" role="dialog" aria-labelledby="device-title">
+    <div class="handle"></div>
+    <h2 id="device-title" data-i18n="device.title"></h2>
+    <p class="lead" data-i18n="device.lead"></p>
+    <button class="choice" id="device-yes"><b data-i18n="device.yes"></b><span data-i18n="device.yesText"></span></button>
+    <button class="choice" id="device-no"><b data-i18n="device.no"></b><span data-i18n="device.noText"></span></button>
+</div>
 
-    <section id="hero" hidden>
-        <div id="cover" class="cover"></div>
-        <h2 id="pebbble-name"></h2>
-        <a id="edit" data-i18n="player.edit" hidden></a>
-    </section>
+<!-- Password -->
+<form class="sheet" id="lock-sheet" autocomplete="off" onsubmit="return false" role="dialog" aria-labelledby="lock-title">
+    <div class="handle"></div>
+    <h2 id="lock-title" data-i18n="lock.title"></h2>
+    <p class="lead" data-i18n="lock.lead"></p>
+    <p class="hint" id="hint"></p>
+    <input class="field" id="pw" type="password" autocomplete="off" data-lpignore="true" data-i18n-placeholder="lock.password">
+    <button class="primary" type="submit" id="unlock" data-i18n="lock.open"></button>
+    <p class="lock-msg" id="lock-msg"></p>
+</form>
 
-    <section id="owner" hidden>
-        <p class="muted" data-i18n="owner.belongsTo"></p>
-        <p><strong id="owner-name"></strong></p>
-        <p class="muted" id="owner-contact-line"><span data-i18n="owner.contact"></span> <strong id="owner-contact"></strong></p>
-    </section>
+<!-- This pebbble -->
+<div class="sheet" id="menu-sheet" role="dialog" aria-labelledby="menu-name">
+    <div class="handle"></div>
+    <div class="sheet-head"><div class="stone" id="menu-stone"></div><h2 id="menu-name"></h2></div>
+    <button class="menu-row" id="m-edit"></button>
+    <button class="menu-row warn" id="m-forget"></button>
+    <button class="menu-row" id="m-settings"></button>
+</div>
 
-    <section id="device" hidden>
-        <p><strong data-i18n="device.question"></strong></p>
-        <div class="row">
-            <button type="button" class="quiet" id="device-no" data-i18n="device.no"></button>
-            <button type="button" class="quiet" id="device-yes" data-i18n="device.yes"></button>
-        </div>
-        <p class="muted" id="device-text"></p>
-        <button type="button" id="device-continue" data-i18n="device.continue" disabled></button>
-    </section>
+<!-- Settings -->
+<div class="sheet" id="settings-sheet" role="dialog" aria-labelledby="settings-title">
+    <div class="handle"></div>
+    <h2 id="settings-title" data-i18n="settings.title"></h2>
+    <div class="set-group">
+        <label data-i18n="settings.language"></label>
+        <div class="chips" id="langs"></div>
+    </div>
+    <div class="set-group">
+        <label data-i18n="settings.phone"></label>
+        <button class="choice" id="set-mine"><b data-i18n="settings.mine"></b><span data-i18n="settings.mineText"></span></button>
+        <button class="choice" id="set-notmine"><b data-i18n="settings.notMine"></b><span data-i18n="settings.notMineText"></span></button>
+    </div>
+    <div class="set-group">
+        <button class="danger" id="clear" data-i18n="settings.clear"></button>
+    </div>
+    <p class="version">Pebbble</p>
+</div>
 
-    <form id="lock" autocomplete="off" onsubmit="return false" hidden>
-        <p><span data-i18n="lock.hint"></span> <em id="hint"></em></p>
-        <label><span data-i18n="lock.password"></span> <input id="pw" type="password" autocomplete="off" data-lpignore="true"></label>
-        <button type="submit" id="unlock" data-i18n="lock.open"></button>
-        <p id="lock-msg" class="error"></p>
-    </form>
+<!-- Full player -->
+<div class="sheet player" id="player" role="dialog" aria-labelledby="pl-title">
+    <div class="top">
+        <button class="icon-btn" id="collapse" data-i18n-label="player.close"><svg class="icon" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+        <span class="from" id="pl-from"></span>
+        <span style="width:44px"></span>
+    </div>
+    <div class="stage">
+        <div class="stone" id="pl-stone"></div>
+        <h2 class="serif" id="pl-title"></h2>
+        <div class="soft" id="pl-sub"></div>
+    </div>
+    <div class="progress" id="progress"><div class="track"></div><div class="fill" id="fill"></div><div class="dot" id="dot"></div></div>
+    <div class="times"><span id="t-now">0:00</span><span id="t-left">-0:00</span></div>
+    <div class="transport">
+        <button class="icon-btn" id="prev" data-i18n-label="player.prev"><svg class="icon" viewBox="0 0 24 24"><path d="M18 6L9 12l9 6z"/><path d="M6 6v12"/></svg></button>
+        <button class="play-big" id="play" data-i18n-label="player.play"></button>
+        <button class="icon-btn" id="next" data-i18n-label="player.next"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6l9 6-9 6z"/><path d="M18 6v12"/></svg></button>
+    </div>
+    <div class="modes">
+        <button class="mode" id="repeat"></button>
+        <button class="mode" id="sleep"></button>
+    </div>
+    <div class="sleep-choices" id="sleep-choices" hidden></div>
+</div>
 
-    <section id="list" hidden>
-        <div id="tracks"></div>
-        <audio id="audio" controls hidden></audio>
-        <p id="saved-note" class="muted" hidden></p>
-    </section>
+<!-- Mini player -->
+<div class="mini" id="mini">
+    <div class="mini-inner" id="mini-open">
+        <div class="stone" id="mini-stone"></div>
+        <div class="txt"><b id="mini-title"></b><span id="mini-sub"></span></div>
+        <button class="icon-btn" id="mini-play" data-i18n-label="player.play"></button>
+        <div class="line" id="mini-line"></div>
+    </div>
+</div>
 
-    <details id="settings">
-        <summary data-i18n="settings.title"></summary>
-        <label><span data-i18n="settings.language"></span> <select id="lang"></select></label>
-        <label><span data-i18n="settings.deviceMode"></span>
-            <select id="mode">
-                <option value="" hidden></option>
-                <option value="owned" data-i18n="device.owned"></option>
-                <option value="guest" data-i18n="device.guest"></option>
-            </select>
-        </label>
-        <button type="button" class="quiet" id="clear" data-i18n="settings.clearData"></button>
-        <p id="settings-msg" class="muted"></p>
-    </details>
-</main>
+<div class="toast" id="toast" role="status"></div>
+<audio id="audio" preload="auto"></audio>
+
 <script type="module" src="player.js"></script>
 </body>
 </html>

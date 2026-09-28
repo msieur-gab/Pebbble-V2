@@ -31,6 +31,7 @@ Storage (Cloudflare R2) only ever holds encrypted files:
 - **Owned or not-owned device**: asked once on each phone. *Owned* keeps the header, keys and audio in IndexedDB, so the pebbble opens offline and without retyping the password, and the player lists saved pebbbles when opened without a tap. *Not-owned* stores nothing; it's all gone when the page closes. Switching to not-owned wipes the device. The offline cache only holds the app's own files, never pebbble content.
 - **My pebbbles (writer library)**: the creator's list of pebbbles (name, stone, key) is one encrypted file in the bucket, `_library/<id>`. Its location and key are both derived from a passphrase set in the writer's settings (PBKDF2, salted per bucket); the passphrase itself is never stored. Any device with the storage settings and the passphrase sees the same list. Opening a stone in the writer adds it to the list.
 - **Tap to edit**: on a device where the writer library is open, the player shows *Edit* on the creator's own pebbbles and opens the writer on them. No link copying. Today the R2 token is the real edit right; a per-pebbble edit key comes with a future upload server.
+- **Player**: a tap opens on the stone (arrival, with the owner note for finders), *Listen* asks once whether this is the owner's phone and for the password if any, then the first voice plays. Bottom-sheet player with mini player, repeat (off / all / this voice), sleep timer (15–60 min or end of voice), lock-screen controls with the stone as artwork. Sleeping voices show when they wake. Each pebbble has a menu: *Edit* (creator), *Forget on this phone* (owned), *Settings*.
 - **Languages**: English, French, Spanish, Chinese (`shared/i18n/`), detected from the phone and changeable in settings.
 
 All of this lives in [`shared/format.js`](shared/format.js), which both apps import.
@@ -40,7 +41,7 @@ All of this lives in [`shared/format.js`](shared/format.js), which both apps imp
 ```
 shared/   format.js (crypto + format), r2.js (storage), i18n.js + i18n/, config.js, base.css
 writer/   make and edit pebbbles — Android Chrome for NFC; any browser with a pasted link
-player/   open and play — any phone; library.js (owned-device storage), sw.js (offline app shell)
+player/   open and play — any phone; player.js (flow + playback), player.css, library.js (owned-device storage), sw.js (offline app shell)
 test/     unit tests, a local stand-in for R2, an end-to-end browser test
 ```
 
@@ -91,6 +92,6 @@ The player's address is written onto every stone and can't change afterwards. `g
 
 ## Not in this core yet
 
-- Full player UI, after the redesign: a clickable prototype of the player flow lives in [`prototype/`](prototype/) (pretend data, real stones).
+- Writer redesign (the player is done; [`prototype/`](prototype/) keeps the clickable flow it was built from).
 - Per-pebbble edit keys, checked by a small upload server (needed before others can create pebbbles).
 - Tag locking, and re-sealing v1 stones.
