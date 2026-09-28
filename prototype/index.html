@@ -62,6 +62,15 @@ a { color: inherit; }
 .pebbble-head .stone { width: min(44vw, 170px); margin: 0 auto; }
 .pebbble-head h1 { font-size: 1.7rem; line-height: 1.2; margin: 18px 0 4px; }
 .pebbble-head .meta { font-size: .9rem; }
+.menu-row { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; padding: 16px 4px; border-top: 1px solid var(--line); }
+.menu-row:last-of-type { border-bottom: 1px solid var(--line); }
+.menu-row b { display: block; font-weight: 600; }
+.menu-row span { font-size: .88rem; color: var(--soft); }
+.menu-row.warn b { color: #9a3b2a; }
+.menu-row.confirm { background: #f3e6e2; border-radius: 12px; border-color: transparent; padding-left: 12px; }
+.sheet-head { display: flex; align-items: center; gap: 14px; margin: 4px 0 18px; }
+.sheet-head .stone { width: 52px; }
+.sheet-head h2 { margin: 0; }
 .edit-link { display: inline-block; margin-top: 10px; font-size: .85rem; font-weight: 600; color: var(--accent); text-decoration: none; padding: 4px 12px; border-radius: 999px; background: var(--accent-soft); }
 .voices { list-style: none; margin: 8px 0 0; padding: 0; }
 .voice { display: flex; align-items: center; gap: 14px; padding: 14px 4px; border-top: 1px solid var(--line); cursor: pointer; }
@@ -176,7 +185,8 @@ body.hide-scenes .scenes { display: none; }
         <option value="library">4 · My pebbbles (my phone)</option>
         <option value="empty">5 · Nothing yet</option>
         <option value="settings">6 · Settings</option>
-        <option value="creator">7 · On the creator's phone</option>
+        <option value="forget">7 · Forget a pebbble</option>
+        <option value="creator">8 · On the creator's phone</option>
     </select>
     <button id="hide-scenes" title="Hide (tap top edge to show)">✕</button>
 </div>
@@ -203,6 +213,15 @@ body.hide-scenes .scenes { display: none; }
     <input class="field" id="pw" type="password" autocomplete="off" placeholder="Password" data-lpignore="true">
     <button class="primary" id="unlock">Open</button>
     <p class="soft" style="font-size:.85rem;text-align:center;margin:12px 0 0">Try “caillou”.</p>
+</div>
+
+<!-- this pebbble -->
+<div class="sheet" id="menu-sheet">
+    <div class="handle"></div>
+    <div class="sheet-head"><div class="stone" id="menu-stone"></div><h2 id="menu-name"></h2></div>
+    <button class="menu-row" id="m-edit"></button>
+    <button class="menu-row warn" id="m-forget"></button>
+    <button class="menu-row" id="m-settings"></button>
 </div>
 
 <!-- settings -->
@@ -278,6 +297,9 @@ const ICON = {
     repeat: '<svg class="icon" viewBox="0 0 24 24"><path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 0 1 3-3h13"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/></svg>',
     moon: '<svg class="icon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
     gear: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>',
+    dots: '<svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/></svg>',
+    pen: '<svg class="icon" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg>',
+    leaf: '<svg class="icon" viewBox="0 0 24 24"><path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14z"/><path d="M5 19l7-7"/></svg>',
     back: '<svg class="icon" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>',
     sleepMark: '<svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
 };
@@ -322,13 +344,12 @@ function render(keepScroll = false) {
             <div class="bar">
                 ${S.fromLibrary ? `<button class="icon-btn" id="to-lib" aria-label="My pebbbles">${ICON.back}</button>` : '<span style="width:44px"></span>'}
                 <span class="title">${S.fromLibrary ? 'My pebbbles' : ''}</span>
-                <button class="icon-btn" id="open-settings" aria-label="Settings">${ICON.gear}</button>
+                <button class="icon-btn" id="open-menu" aria-label="This pebbble">${ICON.dots}</button>
             </div>
             <div class="pebbble-head">
                 <div class="stone ${S.playing ? 'breathing' : ''}" id="head-stone">${stone(p.seed)}</div>
                 <h1 class="serif">${esc(p.name)}</h1>
                 <div class="meta soft">${esc(p.owner)} · ${p.voices.length} voices</div>
-                ${S.creator ? '<a class="edit-link" href="#" id="edit">Edit this pebbble</a>' : ''}
             </div>
             <ol class="voices">${p.voices.map((v, i) => {
                 const cur = i === S.idx && S.started;
@@ -338,8 +359,7 @@ function render(keepScroll = false) {
             <p class="foot-note">Belongs to ${esc(p.owner)} · if found, <a href="mailto:${esc(p.contact)}">${esc(p.contact)}</a></p>`;
         for (const li of app.querySelectorAll('.voice[data-i]')) li.onclick = () => { playAt(+li.dataset.i); openPlayer(); };
         if ($('to-lib')) $('to-lib').onclick = () => { S.view = 'library'; render(); };
-        $('open-settings').onclick = () => openSheet('settings-sheet');
-        if ($('edit')) $('edit').onclick = e => { e.preventDefault(); toast('Opens the writer on this pebbble'); };
+        $('open-menu').onclick = openMenu;
     }
     if (S.view === 'library') {
         if (!S.library.length) {
@@ -397,7 +417,41 @@ function openPebbble(p, fromLibrary) {
     stop();
     Object.assign(S, { pebbble: p, fromLibrary, view: 'pebbble', idx: 0, time: 0, started: false, unlocked: fromLibrary });
     render();
+    // Opening a pebbble plays its first voice (the tap on the stone counts as the touch browsers require).
+    const first = playable()[0];
+    if (first) { playAt(first.i); openPlayer(); }
 }
+
+// ---------- this pebbble: edit / forget / settings ----------
+function openMenu() {
+    const p = S.pebbble;
+    $('menu-stone').innerHTML = stone(p.seed, 'thumb');
+    $('menu-name').textContent = p.name;
+    $('m-edit').hidden = !S.creator;
+    $('m-forget').hidden = !S.owned;
+    resetForget();
+    openSheet('menu-sheet');
+}
+function resetForget() {
+    $('m-forget').classList.remove('confirm');
+    $('m-forget').innerHTML = `${ICON.leaf}<span><b>Forget on this phone</b><span>Its voices leave this phone. The stone keeps them: tap it to bring them back.</span></span>`;
+}
+$('m-edit').onclick = () => { closeSheets(); toast('Opens the writer on this pebbble'); };
+$('m-settings').onclick = () => openSheet('settings-sheet');
+$('m-forget').onclick = () => {
+    const b = $('m-forget');
+    if (!b.classList.contains('confirm')) {
+        b.classList.add('confirm');
+        b.innerHTML = `${ICON.leaf}<span><b>Tap again to forget “${esc(S.pebbble.name)}”</b><span>Nothing changes on the stone.</span></span>`;
+        return;
+    }
+    const gone = S.pebbble;
+    stop(); closeSheets();
+    S.library = S.library.filter(p => p !== gone);
+    S.view = 'library'; S.fromLibrary = false;
+    render();
+    toast(`${gone.name} forgotten on this phone`);
+};
 
 // ---------- sheets ----------
 function openSheet(id) {
@@ -520,6 +574,9 @@ $('sleep').onclick = () => {
 let toastT;
 function toast(msg) { $('toast').textContent = msg; $('toast').classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => $('toast').classList.remove('on'), 2200); }
 
+$('m-edit').innerHTML = `${ICON.pen}<span><b>Edit this pebbble</b><span>Add voices, rename, change the password. Only on your phone.</span></span>`;
+$('m-settings').innerHTML = `${ICON.gear}<span><b>Settings</b><span>Language, this phone, saved voices.</span></span>`;
+
 // ---------- scenes ----------
 function scene(name) {
     closeSheets(); stop();
@@ -531,7 +588,8 @@ function scene(name) {
     if (name === 'library') { Object.assign(S, { view: 'library', owned: true }); render(); }
     if (name === 'empty') { Object.assign(S, { view: 'library', owned: true, library: [] }); render(); }
     if (name === 'settings') { Object.assign(S, { view: 'library', owned: true }); render(); setTimeout(() => openSheet('settings-sheet'), 300); }
-    if (name === 'creator') { Object.assign(S, { view: 'pebbble', pebbble: L, owned: true, creator: true, fromLibrary: true }); render(); }
+    if (name === 'creator') { Object.assign(S, { view: 'pebbble', pebbble: L, owned: true, creator: true, fromLibrary: true }); render(); setTimeout(openMenu, 300); }
+    if (name === 'forget') { Object.assign(S, { view: 'pebbble', pebbble: PEBBBLES[2], owned: true, fromLibrary: true }); render(); setTimeout(openMenu, 300); }
 }
 $('scene').onchange = () => scene($('scene').value);
 $('hide-scenes').onclick = () => document.body.classList.add('hide-scenes');
