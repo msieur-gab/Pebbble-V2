@@ -106,7 +106,9 @@
   "pebbble": {
     "forFrom": "for {for} · from {from}",
     "for": "for {for}",
-    "from": "from {from}"
+    "from": "from {from}",
+    "love": "made with love by {from}",
+    "loveFor": "made with love by {from} for {for}"
   },
   "writer": {
     "title": "Writer",
@@ -213,7 +215,10 @@
       "delete": "Delete this pebbble",
       "deleteText": "The stone will play nothing.",
       "deleteConfirm": "Tap again to delete “{name}”",
-      "deleted": "“{name}” deleted"
+      "deleted": "“{name}” deleted",
+      "style": "Phrasing",
+      "styleTag": "for · from",
+      "styleLove": "made with love"
     },
     "voice": {
       "newVoice": "A new voice",
@@ -223,7 +228,7 @@
       "chooseFile": "choose an audio file",
       "otherFile": "another file",
       "recorded": "Recorded",
-      "listen": "listen",
+      "listen": "Listen",
       "tapToStop": "Tap to stop",
       "title": "Title",
       "titlePlaceholder": "Good night, little one",
@@ -247,7 +252,10 @@
       "needAudio": "Record a voice or choose a file first.",
       "needTitle": "Give it a title.",
       "noMic": "The microphone is not available. Allow it for this site, or choose a file.",
-      "badFile": "This file can't be played. Try another one."
+      "badFile": "This file can't be played. Try another one.",
+      "stop": "Stop",
+      "opening": "Opening…",
+      "cannotPlay": "This voice could not be played."
     },
     "pw": {
       "title": "Password",

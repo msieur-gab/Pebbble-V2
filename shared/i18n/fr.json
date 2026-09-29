@@ -106,7 +106,9 @@
   "pebbble": {
     "forFrom": "pour {for} · de {from}",
     "for": "pour {for}",
-    "from": "de {from}"
+    "from": "de {from}",
+    "love": "fait avec amour par {from}",
+    "loveFor": "fait avec amour par {from} pour {for}"
   },
   "writer": {
     "title": "Atelier",
@@ -213,7 +215,10 @@
       "delete": "Supprimer ce pebbble",
       "deleteText": "La pierre ne jouera plus rien.",
       "deleteConfirm": "Touche encore pour supprimer « {name} »",
-      "deleted": "« {name} » supprimé"
+      "deleted": "« {name} » supprimé",
+      "style": "Formulation",
+      "styleTag": "pour · de",
+      "styleLove": "fait avec amour"
     },
     "voice": {
       "newVoice": "Une nouvelle voix",
@@ -223,7 +228,7 @@
       "chooseFile": "choisir un fichier audio",
       "otherFile": "un autre fichier",
       "recorded": "Enregistré",
-      "listen": "écouter",
+      "listen": "Écouter",
       "tapToStop": "Touche pour arrêter",
       "title": "Titre",
       "titlePlaceholder": "Bonne nuit, ma puce",
@@ -247,7 +252,10 @@
       "needAudio": "Enregistre une voix ou choisis d’abord un fichier.",
       "needTitle": "Donne-lui un titre.",
       "noMic": "Le micro n’est pas disponible. Autorise-le pour ce site, ou choisis un fichier.",
-      "badFile": "Ce fichier ne peut pas être lu. Essaie-en un autre."
+      "badFile": "Ce fichier ne peut pas être lu. Essaie-en un autre.",
+      "stop": "Arrêter",
+      "opening": "Ouverture…",
+      "cannotPlay": "Cette voix n’a pas pu être lue."
     },
     "pw": {
       "title": "Mot de passe",

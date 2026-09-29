@@ -11,7 +11,7 @@ import { config } from '../shared/config.js';
 import { initI18n, setLanguage, language, LANGUAGES, t } from '../shared/i18n.js';
 import { $, esc, mmss, stone, plural, ICON, dedication, belongsTo, createSheets, toast, shake } from '../shared/ui.js';
 
-const VERSION = '2026-09-29 · 11:00'; // shown in Settings
+const VERSION = '2026-09-29 · 10:40'; // shown in Settings
 const SETTINGS_KEY = 'pebbble-writer-settings';
 const LIB_CACHE = 'pebbble-writer-library'; // also read by the player to offer Edit
 const canNfc = 'NDEFReader' in window;
@@ -371,7 +371,7 @@ function renderEditor() {
         <form autocomplete="off" onsubmit="return false">
             <div class="ed-head">
                 <div class="stone" id="e-stone">${stone(F.coverSeed(header, p.id))}</div>
-                ${s.isNew ? `<button type="button" class="reroll" id="reroll">${ICON.reroll}${t('writer.editor.anotherStone')}</button>` : ''}
+                <button type="button" class="reroll" id="reroll">${ICON.reroll}${t('writer.editor.anotherStone')}</button>
                 <input class="name-in" id="e-name" name="pebbble-title" value="${esc(header.name)}" placeholder="${esc(t('writer.editor.namePlaceholder'))}" aria-label="${esc(t('writer.editor.name'))}" autocomplete="off" data-lpignore="true">
             </div>
             <div class="dedic">
@@ -404,7 +404,8 @@ function renderEditor() {
         { label: t(s.isNew ? (canNfc ? 'writer.save.andWrite' : 'writer.save.save') : 'writer.save.changes'), onclick: save });
     renderPreview();
     $('back').onclick = home;
-    if (s.isNew) $('reroll').onclick = () => { header.cover = F.newCoverSeed(); $('e-stone').innerHTML = stone(header.cover); renderPreview(); };
+    // The stone is drawn from a seed kept in the header: changing it rewrites the header only.
+    $('reroll').onclick = () => { header.cover = F.newCoverSeed(); $('e-stone').innerHTML = stone(header.cover); renderPreview(); };
     $('e-name').oninput = e => { header.name = e.target.value; renderPreview(); };
     $('e-from').oninput = e => { header.from = e.target.value; renderPreview(); };
     $('e-for').oninput = e => { header.for = e.target.value; renderPreview(); };
@@ -425,7 +426,15 @@ function renderPreview() {
             <div class="pv-name">${esc(header.name || t('writer.editor.namePlaceholder'))}</div>
             ${d ? `<div class="pv-ded">${esc(d)}</div>` : ''}
             <div class="pv-count">${n ? plural('arrival.voices', n) : t('writer.editor.noVoices')}</div>
-        </div>`;
+        </div>
+        <span class="seg" role="group" aria-label="${esc(t('writer.editor.style'))}">
+            <button type="button" data-ded="" class="${header.ded ? '' : 'on'}">${t('writer.editor.styleTag')}</button>
+            <button type="button" data-ded="love" class="${header.ded === 'love' ? 'on' : ''}">${t('writer.editor.styleLove')}</button>
+        </span>`;
+    for (const b of $('preview').querySelectorAll('.seg button')) b.onclick = () => {
+        if (b.dataset.ded) header.ded = b.dataset.ded; else delete header.ded;
+        renderPreview();
+    };
 }
 
 // ---------- dates ----------
@@ -469,6 +478,8 @@ function openVoice(ref) {
     const r = ref && rows().find(x => x.kind === ref.kind && x.i === ref.i);
     $('v-head').textContent = t(r ? 'writer.voice.thisVoice' : 'writer.voice.newVoice');
     $('v-rec').hidden = !!r;
+    $('v-listen-row').hidden = !r;
+    $('v-play-time').textContent = r ? mmss(r.duration) : '';
     showRecorded();
     $('v-title').value = r ? r.title : '';
     $('v-save').textContent = t(r ? 'writer.voice.keep' : 'writer.voice.add');
@@ -521,27 +532,61 @@ $('v-remove').onclick = () => {
     renderEditor();
 };
 
+// ---------- listening before keeping ----------
+// A new recording plays from memory; a saved voice is fetched and decrypted, like the player does.
+
+let previewAudio = null, previewUrl = null;
+
+function stopPreview() {
+    previewAudio?.pause();
+    previewAudio = null;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = null;
+    for (const b of document.querySelectorAll('[data-listen]')) b.textContent = t('writer.voice.listen');
+}
+
+async function togglePreview(button, getBlob) {
+    if (previewAudio) { stopPreview(); return; }
+    button.textContent = t('writer.voice.opening');
+    try {
+        previewUrl = URL.createObjectURL(await getBlob());
+        previewAudio = new Audio(previewUrl);
+        previewAudio.onended = stopPreview;
+        await previewAudio.play();
+        button.textContent = t('writer.voice.stop');
+    } catch {
+        stopPreview();
+        $('v-msg').textContent = t('writer.voice.cannotPlay');
+    }
+}
+
+/** The audio of a voice in the list: pending ones are in memory, saved ones are in storage. */
+async function voiceBlob(ref) {
+    if (ref.kind === 'pending') return s.pending[ref.i].blob;
+    const tr = s.header.tracks[ref.i];
+    const sealed = await R2.get(publicBase(), `${s.p.id}/${tr.f}`);
+    const bytes = await F.openTrack(sealed, s.p.id, tr.f, await F.trackKey(tr, s.p.id, s.pwKey));
+    return new Blob([bytes], { type: tr.type });
+}
+$('v-play').onclick = () => togglePreview($('v-play'), () => voiceBlob(editing));
+
 // ---------- recording ----------
 
-let recorder = null, recTimer = null, recStart = 0, previewAudio = null;
+let recorder = null, recTimer = null, recStart = 0;
 
 function showRecorded() {
     $('rec-btn').classList.remove('on');
     $('rec-time').textContent = recorded ? mmss(recorded.duration) : '0:00';
     $('rec-or').innerHTML = recorded
-        ? `${esc(recorded.name || t('writer.voice.recorded'))} · <button type="button" class="link" id="v-listen">${t('writer.voice.listen')}</button> · <button type="button" class="link" id="v-pick">${t('writer.voice.otherFile')}</button>`
+        ? `${esc(recorded.name || t('writer.voice.recorded'))} · <button type="button" class="link" id="v-listen" data-listen>${t('writer.voice.listen')}</button> · <button type="button" class="link" id="v-pick">${t('writer.voice.otherFile')}</button>`
         : `${t('writer.voice.or')} <button type="button" class="link" id="v-pick">${t('writer.voice.chooseFile')}</button>`;
     $('v-pick').onclick = () => $('v-file').click();
-    if ($('v-listen')) $('v-listen').onclick = () => {
-        previewAudio?.pause();
-        previewAudio = new Audio(URL.createObjectURL(recorded.blob));
-        previewAudio.play().catch(() => {});
-    };
+    if ($('v-listen')) $('v-listen').onclick = () => togglePreview($('v-listen'), async () => recorded.blob);
 }
 
 $('rec-btn').onclick = async () => {
     if (recorder) { recorder.stop(); return; }
-    previewAudio?.pause();
+    stopPreview();
     let stream;
     try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
     catch { $('v-msg').textContent = t('writer.voice.noMic'); return; }
@@ -568,7 +613,7 @@ $('rec-btn').onclick = async () => {
 };
 
 function stopRecording() {
-    previewAudio?.pause();
+    stopPreview();
     if (recorder) { recorder.ondataavailable = null; recorder.stop(); }
 }
 

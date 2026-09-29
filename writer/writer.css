@@ -58,6 +58,9 @@
 .preview .pv-name { font-family: var(--serif); font-size: 1.2rem; line-height: 1.2; }
 .preview .pv-ded { font-family: var(--serif); font-style: italic; color: var(--soft); font-size: .98rem; margin-top: 2px; }
 .preview .pv-count { font-size: .8rem; color: var(--faint); margin-top: 4px; }
+.seg { grid-column: 1 / -1; justify-self: start; display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; margin-top: 10px; font-size: .8rem; }
+.seg button { padding: 5px 12px; border-radius: 999px; color: var(--soft); }
+.seg button.on { background: var(--ink); color: var(--paper); }
 
 .section { margin: 34px 0 0; }
 .section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 0 0 6px; }
@@ -79,6 +82,8 @@
 .rec-btn.on::after { content: ""; position: absolute; inset: -10px; border-radius: 50%; border: 1px solid var(--warn); animation: ring 1.8s var(--ease) infinite; }
 .rec-time { font-variant-numeric: tabular-nums; font-size: 1.1rem; }
 .rec-or { font-size: .85rem; color: var(--soft); text-align: center; }
+.listen-row { display: flex; align-items: center; gap: 16px; margin: 4px 0 22px; }
+.listen-row .ghost { width: auto; flex: 1; }
 .when { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 14px; }
 .when button { padding: 12px 6px; border-radius: 14px; border: 1px solid var(--line); font-size: .88rem; line-height: 1.25; }
 .when button.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }

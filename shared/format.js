@@ -84,9 +84,10 @@ const checkAad = id => `pebbble/v2/pwcheck/${id}`;
 
 /**
  * Header shape:
- * { v, name, cover?, from, for, contact, hint?, pw?: {salt, rounds, check},
+ * { v, name, cover?, from, for, ded?, contact, hint?, pw?: {salt, rounds, check},
  *   tracks: [{ f, title, type, duration, k? | wk?, window? }], updated }
- * `from` made it, `for` is who it's for (optional), `contact` is shown to anyone who finds it.
+ * `from` made it, `for` is who it's for (optional), `ded: 'love'` picks the "made with love" phrasing,
+ * `contact` is shown to anyone who finds it.
  * A track carries `k` (its key) when there is no password, `wk` (its key wrapped
  * with the password key) when there is one.
  */

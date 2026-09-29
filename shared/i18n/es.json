@@ -106,7 +106,9 @@
   "pebbble": {
     "forFrom": "para {for} · de {from}",
     "for": "para {for}",
-    "from": "de {from}"
+    "from": "de {from}",
+    "love": "hecho con amor por {from}",
+    "loveFor": "hecho con amor por {from} para {for}"
   },
   "writer": {
     "title": "Taller",
@@ -213,7 +215,10 @@
       "delete": "Eliminar este pebbble",
       "deleteText": "La piedra no reproducirá nada.",
       "deleteConfirm": "Toca otra vez para eliminar «{name}»",
-      "deleted": "«{name}» eliminado"
+      "deleted": "«{name}» eliminado",
+      "style": "Redacción",
+      "styleTag": "para · de",
+      "styleLove": "hecho con amor"
     },
     "voice": {
       "newVoice": "Una voz nueva",
@@ -223,7 +228,7 @@
       "chooseFile": "elige un archivo de audio",
       "otherFile": "otro archivo",
       "recorded": "Grabado",
-      "listen": "escuchar",
+      "listen": "Escuchar",
       "tapToStop": "Toca para parar",
       "title": "Título",
       "titlePlaceholder": "Buenas noches, pequeña",
@@ -247,7 +252,10 @@
       "needAudio": "Graba una voz o elige primero un archivo.",
       "needTitle": "Ponle un título.",
       "noMic": "El micrófono no está disponible. Permítelo para este sitio o elige un archivo.",
-      "badFile": "Este archivo no se puede reproducir. Prueba con otro."
+      "badFile": "Este archivo no se puede reproducir. Prueba con otro.",
+      "stop": "Parar",
+      "opening": "Abriendo…",
+      "cannotPlay": "No se pudo reproducir esta voz."
     },
     "pw": {
       "title": "Contraseña",

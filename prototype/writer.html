@@ -476,7 +476,7 @@ function renderEditor() {
         <form autocomplete="off" onsubmit="return false">
         <div class="ed-head">
             <div class="stone" id="e-stone">${stone(p.seed)}</div>
-            ${S.isNew ? `<button type="button" class="reroll" id="reroll">${ICON.reroll}Another stone</button>` : ''}
+            <button type="button" class="reroll" id="reroll">${ICON.reroll}Another stone</button>
             <input class="name-in" id="e-name" value="${esc(p.name)}" placeholder="Name this pebbble" aria-label="Pebbble name" data-lpignore="true">
         </div>
         <div class="dedic">
@@ -508,7 +508,7 @@ function renderEditor() {
         </div></div>`}`;
     renderPreview();
     $('back').onclick = () => go('library');
-    if ($('reroll')) $('reroll').onclick = () => { p.seed = Math.random().toString(36).slice(2, 12); $('e-stone').innerHTML = stone(p.seed); renderPreview(); };
+    $('reroll').onclick = () => { p.seed = Math.random().toString(36).slice(2, 12); $('e-stone').innerHTML = stone(p.seed); renderPreview(); };
     $('e-name').oninput = e => { p.name = e.target.value; renderPreview(); };
     $('e-from').oninput = e => { p.from = e.target.value; renderPreview(); };
     $('e-for').oninput = e => { p.for = e.target.value; renderPreview(); };

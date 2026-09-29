@@ -15,7 +15,7 @@ import { initI18n, setLanguage, language, LANGUAGES, t } from '../shared/i18n.js
 import { $, esc, mmss, stone, plural, ICON, dedication, belongsTo, createSheets, toast, shake } from '../shared/ui.js';
 
 const audio = $('audio');
-const VERSION = '2026-09-29 · 11:00'; // shown in Settings, to tell which version a phone runs
+const VERSION = '2026-09-29 · 10:40'; // shown in Settings, to tell which version a phone runs
 
 // ---------- state ----------
 let view = 'none';

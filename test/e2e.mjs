@@ -211,6 +211,19 @@ await page.waitForSelector('#u-pw');
 await page.fill('#u-pw', 'caillou'); await page.click('#u-go');
 await page.waitForSelector('#e-voices');
 await add(page, 'Added later', 'always');
+// Listen to a saved voice before deciding to keep it
+await page.click('#e-voices .voice[data-kind="track"]'); await on(page, 'voice-sheet');
+await page.click('#v-play');
+await page.waitForFunction(() => document.getElementById('v-play').textContent === 'Stop', null, { timeout: 10000 });
+log('saved voice plays in the editor:', await page.inputValue('#v-title'), '|', await page.textContent('#v-play-time'));
+await page.click('#v-play');
+await page.click('#scrim', { position: { x: 20, y: 20 } }); await off(page, 'voice-sheet');
+// Another stone and the "made with love" phrasing, on a saved pebbble
+const oldStone = await page.innerHTML('#e-stone');
+await page.click('#reroll');
+log('saved pebbble can take another stone:', oldStone !== await page.innerHTML('#e-stone'));
+await page.click('#preview .seg button[data-ded="love"]');
+log('preview with the other phrasing:', await page.textContent('#preview .pv-ded'));
 log('existing pebbble dock says:', await page.textContent('#dock-btn'));
 await page.click('#dock-btn');
 await page.waitForSelector('#shelf button[data-id]');
@@ -222,6 +235,7 @@ await g2.goto(url); await g2.click('#listen');
 await unlockWith(g2, 'caillou');
 await playing(g2);
 log('voices now', (await voices(g2)).length, '(device question remembered: yes)');
+log('player shows the chosen phrasing:', await g2.textContent('.arrival .dedication').catch(() => 'n/a'));
 // Swipe the mini player sideways to change voice
 await g2.click('#collapse'); await on(g2, 'mini');
 const swipe = async (pg, dx) => {

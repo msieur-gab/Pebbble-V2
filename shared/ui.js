@@ -30,9 +30,13 @@ export const ICON = {
 
 // ---------- what a pebbble says about itself ----------
 
-/** The line under a pebbble's name: "for Lina · from Papa", "from Papa", or ''. */
+/**
+ * The line under a pebbble's name, in the phrasing its creator chose:
+ * "for Lina · from Papa" (the default), or with `ded: 'love'` "made with love by Papa for Lina".
+ */
 export function dedication(header) {
     const from = header.from?.trim(), to = header.for?.trim();
+    if (header.ded === 'love' && from) return to ? t('pebbble.loveFor', { from, for: to }) : t('pebbble.love', { from });
     if (from && to) return t('pebbble.forFrom', { for: to, from });
     if (to) return t('pebbble.for', { for: to });
     if (from) return t('pebbble.from', { from });
