@@ -237,12 +237,12 @@ body.hide-scenes .scenes { display: none; }
     <span class="cap">When can it be heard?</span>
     <div class="when" id="v-when">
         <button type="button" data-w="always" class="on">Always</button>
-        <button type="button" data-w="dates">Between dates</button>
+        <button type="button" data-w="dates">From a date</button>
         <button type="button" data-w="yearly">Every year</button>
     </div>
-    <div class="two" id="v-dates" hidden>
-        <label>Wakes on<input class="field" type="date" id="v-from" value="2038-03-14"></label>
-        <label>Sleeps again<input class="field" type="date" id="v-to" value="2038-03-21"></label>
+    <div id="v-dates" hidden>
+        <label class="cap" for="v-from">Wakes on</label>
+        <input class="field" type="date" id="v-from" value="2038-03-14">
     </div>
     <div class="two" id="v-yearly" hidden>
         <label>Every year from<input class="field" id="v-ya" value="20 December"></label>
@@ -549,7 +549,7 @@ function setWhen(w) {
     for (const b of $('v-when').children) b.classList.toggle('on', b.dataset.w === w);
     $('v-dates').hidden = w !== 'dates';
     $('v-yearly').hidden = w !== 'yearly';
-    $('v-when-note').textContent = { always: 'Anyone who taps the stone can hear it.', dates: 'It sleeps until then, and after. The list shows when it wakes.', yearly: 'It wakes every year for those days, then sleeps again.' }[w];
+    $('v-when-note').textContent = { always: 'Anyone who taps the stone can hear it.', dates: 'It sleeps until that day, then stays awake for good. The list shows when it wakes.', yearly: 'It wakes every year for those days, then sleeps again.' }[w];
 }
 function openVoice(i) {
     S.editIdx = i;
