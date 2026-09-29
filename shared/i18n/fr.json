@@ -163,14 +163,17 @@
       "eyebrow": "Presque fini",
       "title": "Choisis une phrase-clé",
       "titleJoin": "Ta phrase-clé",
-      "lead": "Elle ouvre la liste de tes pebbbles sur chaque appareil configuré. Utilise la même partout. Elle n’est jamais enregistrée ni envoyée.",
+      "lead": "Elle ouvre la liste de tes pebbbles sur chaque appareil configuré. Au moins 12 caractères : mots, chiffres, signes, comme tu veux. Elle n’est jamais enregistrée ni envoyée.",
       "leadJoin": "Celle choisie sur ton autre appareil. Elle ouvre le code de configuration et la liste de tes pebbbles.",
-      "placeholder": "Quatre ou cinq mots dont tu te souviendras",
+      "placeholder": "Au moins {n} caractères",
       "lose": "Si tu la perds, la liste est perdue, mais les pierres continuent de marcher : tu peux rouvrir chacune en l’approchant du téléphone.",
       "go": "Ouvrir mes pebbbles",
       "opening": "Ouverture…",
-      "short": "Utilise au moins trois mots.",
-      "wrong": "Cette phrase-clé n’ouvre pas ce code."
+      "short": "Utilise au moins {n} caractères. La longueur compte plus que les symboles.",
+      "wrong": "Cette phrase-clé n’ouvre pas ce code.",
+      "placeholderKnown": "Ta phrase-clé",
+      "leadAgain": "Celle que tu utilises déjà. Elle ouvre la liste de tes pebbbles et permet de configurer d’autres appareils.",
+      "notSame": "Ce n’est pas la phrase-clé que connaît cet appareil. Vérifie les majuscules et les espaces."
     },
     "library": {
       "new": "Nouveau pebbble",
@@ -332,5 +335,9 @@
       "title": "Configurer un autre appareil",
       "lead": "Sur l’autre appareil, choisis « Coller un code de configuration », colle ceci, puis tape ta phrase-clé. Sans elle, le code n’ouvre rien."
     }
+  },
+  "common": {
+    "show": "Afficher le mot de passe",
+    "hide": "Masquer le mot de passe"
   }
 }

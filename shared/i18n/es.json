@@ -163,14 +163,17 @@
       "eyebrow": "Casi listo",
       "title": "Elige una frase clave",
       "titleJoin": "Tu frase clave",
-      "lead": "Abre la lista de tus pebbbles en cada dispositivo que configures. Usa la misma en todos. Nunca se guarda ni se envía.",
+      "lead": "Abre la lista de tus pebbbles en cada dispositivo que configures. Al menos 12 caracteres: palabras, números, signos, como quieras. Nunca se guarda ni se envía.",
       "leadJoin": "La que elegiste en tu otro dispositivo. Abre el código de configuración y la lista de tus pebbbles.",
-      "placeholder": "Cuatro o cinco palabras que recordarás",
+      "placeholder": "Al menos {n} caracteres",
       "lose": "Si la pierdes, la lista se pierde, pero las piedras siguen funcionando: puedes volver a abrir cada una acercándola al teléfono.",
       "go": "Abrir mis pebbbles",
       "opening": "Abriendo…",
-      "short": "Usa al menos tres palabras.",
-      "wrong": "Esta frase clave no abre ese código."
+      "short": "Usa al menos {n} caracteres. La longitud importa más que los símbolos.",
+      "wrong": "Esta frase clave no abre ese código.",
+      "placeholderKnown": "Tu frase clave",
+      "leadAgain": "La que ya usas. Abre la lista de tus pebbbles y permite configurar otros dispositivos.",
+      "notSame": "Esa no es la frase clave que conoce este dispositivo. Revisa mayúsculas y espacios."
     },
     "library": {
       "new": "Nuevo pebbble",
@@ -332,5 +335,9 @@
       "title": "Configurar otro dispositivo",
       "lead": "En el otro dispositivo, elige «Pegar un código de configuración», pega esto y escribe tu frase clave. Sin ella, el código no abre nada."
     }
+  },
+  "common": {
+    "show": "Mostrar contraseña",
+    "hide": "Ocultar contraseña"
   }
 }

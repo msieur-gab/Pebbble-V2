@@ -19,6 +19,10 @@ Two web apps, no build step, no runtime dependencies:
 - Storage: Cloudflare R2 bucket `pebbble`, public reads via `https://pub-073de7a826d54d4490642e8ce5e90072.r2.dev` (set in `shared/config.js`). Uploads are signed in the browser with an R2 API token that lives only in the writer's settings on Gab's devices, never in the repo.
 - The old v1 repo (`msieur-gab/pebbble`, IPFS + serial-as-key) is reference only. Don't touch it.
 
+## Working with Gab
+
+- **Ask before changing behaviour he has seen or agreed on**, even when it looks like a cleanup: a password rule, a format detail, a flow step. Propose, wait for his yes, then build. (A silent "no backward compatibility" cleanup and a new three-word minimum once locked him out of his own pebbbles and list.)
+
 ## Commits
 
 - **Never mention Claude in commit messages** (Gab's standing preference). No `Co-Authored-By: Claude` lines either.
@@ -57,7 +61,7 @@ Two web apps, no build step, no runtime dependencies:
 ## Writer behaviour (writer/writer.js)
 
 Designed from the clickable renderings in `prototype/writer.html` (Gab approved them); keep the two in step when the design changes.
-- **First time on a device**: *Paste a setup code* or *Set up my storage* (a guided sheet: bucket, public r2.dev address + a CORS rule to paste, API token; the account ID is read from the S3 address). *Connect* checks both writing and public reading with a small `_check` file and says which step is wrong. Then the **key phrase** screen (at least three words), which after a setup code must open that code.
+- **First time on a device**: *Paste a setup code* or *Set up my storage* (a guided sheet: bucket, public r2.dev address + a CORS rule to paste, API token; the account ID is read from the S3 address). *Connect* checks both writing and public reading with a small `_check` file and says which step is wrong. Then the **key phrase** screen. A *new* phrase needs at least 12 characters, in any form (length over composition rules, as Gab agreed). An *existing* phrase is never refused for its length: after a setup code it must open that code, and on a device that knew the phrase before setup codes existed it must give the same `libId`. The key phrase is case-sensitive, unlike pebbble passwords.
 - **My pebbbles**: a shelf of stones, a *New pebbble* tile, *Hold a stone to the back of the phone* (Web NFC scan) and *Open a pebbble by its link*. Without Web NFC the hint says so.
 - **Editor**, one calm page: the stone (*Another stone*, on new and saved pebbbles alike: the seed lives in the header), the name, **From / For** fields with a live preview of what people see when they tap and the phrasing choice (*for · from* / *made with love*), the voices, then *Keeping it safe* (password + hint, if found) and, for saved pebbbles, *Write to another stone* and *Delete* (tap twice). A new pebbble starts with the last From and contact used on this device. The dock button saves: *Save and write to a stone* (new, with NFC), *Save* (new, no NFC: write it later from the phone), *Save changes*.
 - **Voice sheet**: record (AAC/MP4 when supported), or choose a file; title; *Always / From a date / Every year* (day + month pickers). Durations are measured when a voice is added. Every voice can be **listened to** before deciding to keep it: a new one from memory, a saved one fetched and decrypted like the player does. Remove asks twice.
@@ -66,6 +70,7 @@ Designed from the clickable renderings in `prototype/writer.html` (Gab approved 
 - **Write**: hold the stone, then *“Name” is in the stone* with *Listen now*, *Copy its link*, and **Lock the tag** (asks for confirmation, then `makeReadOnly()`; can't be undone).
 - **Settings**: language, storage (reopens the guide), *Set up another device* (the setup code), *Disconnect this device* (tap twice; stones keep working).
 - Every writer string goes through `t()` under `writer.*` in the same four language files. French uses "tu", like the player.
+- **Every password field has a show/hide eye** (`revealPasswords()` in ui.js, in both apps). Revealed fields hide again when their sheet closes.
 
 ## Hard-won lessons
 

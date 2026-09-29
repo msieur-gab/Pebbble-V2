@@ -88,6 +88,38 @@ export function createSheets({ base = null, onOpen = () => {}, onChange = () => 
     return { open, closeAll, closeTop, isOpen: id => $(id).classList.contains('on') };
 }
 
+// ---------- show / hide passwords ----------
+
+const EYE = svg('<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>');
+const EYE_OFF = svg('<path d="M3 3l18 18"/><path d="M10.6 5.6A9.6 9.6 0 0 1 12 5.5C18.4 5.5 22 12 22 12a17 17 0 0 1-3.3 4.1M6.6 6.6C3.8 8.4 2 12 2 12s3.6 6.5 10 6.5c1.9 0 3.5-.6 4.9-1.4"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>');
+
+/** Give every password field under root an eye button that shows or hides what was typed. */
+export function revealPasswords(root = document) {
+    for (const input of root.querySelectorAll('input[type=password]:not([data-reveal])')) {
+        input.dataset.reveal = '';
+        const wrap = document.createElement('div');
+        wrap.className = 'pw-field';
+        input.replaceWith(wrap);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'reveal';
+        const set = shown => {
+            input.type = shown ? 'text' : 'password';
+            btn.innerHTML = shown ? EYE_OFF : EYE;
+            btn.setAttribute('aria-label', t(shown ? 'common.hide' : 'common.show'));
+            btn.setAttribute('aria-pressed', String(shown));
+        };
+        btn.onclick = () => { set(input.type === 'password'); input.focus(); };
+        input.hidePassword = () => set(false);
+        set(false);
+        wrap.append(input, btn);
+    }
+}
+/** Hide every revealed password again (when a sheet or screen closes). */
+export function hidePasswords(root = document) {
+    for (const input of root.querySelectorAll('input[data-reveal][type=text]')) input.hidePassword();
+}
+
 // ---------- toast ----------
 
 let toastTimer;

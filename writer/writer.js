@@ -9,15 +9,15 @@ import * as F from '../shared/format.js';
 import * as R2 from '../shared/r2.js';
 import { config } from '../shared/config.js';
 import { initI18n, setLanguage, language, LANGUAGES, t } from '../shared/i18n.js';
-import { $, esc, mmss, stone, plural, ICON, dedication, belongsTo, createSheets, toast, shake } from '../shared/ui.js';
+import { $, esc, mmss, stone, plural, ICON, dedication, belongsTo, createSheets, toast, shake, revealPasswords, hidePasswords } from '../shared/ui.js';
 
-const VERSION = '2026-09-29 · 10:40'; // shown in Settings
+const VERSION = '2026-09-29 · 11:10'; // shown in Settings
 const SETTINGS_KEY = 'pebbble-writer-settings';
 const LIB_CACHE = 'pebbble-writer-library'; // also read by the player to offer Edit
 const canNfc = 'NDEFReader' in window;
 
 let view = 'none';
-const sheets = createSheets({ onOpen: id => { if (id === 'settings-sheet') renderSettings(); }, onClose: stopRecording });
+const sheets = createSheets({ onOpen: id => { if (id === 'settings-sheet') renderSettings(); }, onClose: () => { stopRecording(); hidePasswords(); } });
 
 // ---------- settings on this device ----------
 // { accountId, accessKeyId, secretAccessKey, bucket, publicBase, libId, libKey, setupKey }
@@ -71,6 +71,7 @@ function draw(html, dock = null) {
     window.scrollTo(0, 0);
     $('dock').hidden = !dock;
     if (dock) { $('dock-btn').textContent = dock.label; $('dock-btn').onclick = dock.onclick; $('dock-btn').disabled = false; }
+    revealPasswords($('app'));
 }
 
 function showStatus(text) {
@@ -94,39 +95,49 @@ function renderWelcome() {
     $('c-guide').onclick = openGuide;
 }
 
-/** Key phrase. After a setup code, the phrase must open that code; otherwise it's a new phrase. */
+/**
+ * Key phrase, in one of three situations:
+ *   new   — choosing a phrase: at least KEY_MIN characters
+ *   join  — after a setup code: the phrase must open that code
+ *   again — this device knew the phrase before setup codes existed: it must give the same list
+ * An existing phrase is never refused for its length.
+ */
+const KEY_MIN = 12;
 let pendingCode = null;
 function renderKey() {
     view = 'key';
-    const joining = !!pendingCode;
+    const mode = pendingCode ? 'join' : loadSettings().libId ? 'again' : 'new';
+    const known = mode !== 'new';
     draw(`<section class="welcome">
         <div class="stone appear">${stone('pebbble-1')}</div>
         <p class="eyebrow appear d1">${t('writer.key.eyebrow')}</p>
-        <h1 class="serif appear d1">${t(joining ? 'writer.key.titleJoin' : 'writer.key.title')}</h1>
-        <p class="lead appear d2">${t(joining ? 'writer.key.leadJoin' : 'writer.key.lead')}</p>
+        <h1 class="serif appear d1">${t(known ? 'writer.key.titleJoin' : 'writer.key.title')}</h1>
+        <p class="lead appear d2">${t({ new: 'writer.key.lead', join: 'writer.key.leadJoin', again: 'writer.key.leadAgain' }[mode])}</p>
         <form class="appear d3" autocomplete="off" onsubmit="return false">
-            <input class="field" id="k-in" type="password" autocomplete="new-password" data-lpignore="true" placeholder="${esc(t('writer.key.placeholder'))}">
-            ${joining ? '' : `<p class="note">${t('writer.key.lose')}</p>`}
+            <input class="field" id="k-in" type="password" autocomplete="new-password" data-lpignore="true" placeholder="${esc(t(known ? 'writer.key.placeholderKnown' : 'writer.key.placeholder', { n: KEY_MIN }))}">
+            ${known ? '' : `<p class="note">${t('writer.key.lose')}</p>`}
             <button type="button" class="primary" id="k-go">${t('writer.key.go')}</button>
             <p class="msg" id="k-msg"></p>
         </form>
     </section>`);
     $('k-go').onclick = async () => {
         const phrase = $('k-in').value.trim();
-        if (phrase.split(/\s+/).length < 3) { $('k-msg').textContent = t('writer.key.short'); return; }
+        if (!phrase || (mode === 'new' && phrase.length < KEY_MIN)) { $('k-msg').textContent = t('writer.key.short', { n: KEY_MIN }); shake($('k-in')); return; }
         $('k-go').disabled = true;
         $('k-go').textContent = t('writer.key.opening');
         try {
             const setupKey = await F.deriveSetupKey(phrase);
             let s = loadSettings();
-            if (joining) {
+            if (mode === 'join') {
                 try { s = { ...s, ...(await F.openSetup(pendingCode, setupKey)) }; }
                 catch { $('k-msg').textContent = t('writer.key.wrong'); shake($('k-in')); return; }
             }
-            Object.assign(s, { setupKey }, await F.deriveLibrary(phrase, config.devEndpoint ? 'dev' : s.bucket));
+            const lib = await F.deriveLibrary(phrase, config.devEndpoint ? 'dev' : s.bucket);
+            if (mode === 'again' && lib.libId !== s.libId) { $('k-msg').textContent = t('writer.key.notSame'); shake($('k-in')); return; }
+            Object.assign(s, { setupKey }, lib);
             saveSettings(s);
             pendingCode = null;
-            try { localStorage.removeItem(LIB_CACHE); } catch {}
+            if (mode !== 'again') { try { localStorage.removeItem(LIB_CACHE); } catch {} }
             await home();
         } finally {
             if ($('k-go')) { $('k-go').disabled = false; $('k-go').textContent = t('writer.key.go'); }
@@ -882,6 +893,7 @@ async function copy(text) {
 // ---------- start ----------
 
 await initI18n();
+revealPasswords();
 // Opened from the player's Edit: writer/#<id>.<key>
 const fromPlayer = F.parseFragment(location.hash);
 if (fromPlayer) history.replaceState(null, '', location.pathname);

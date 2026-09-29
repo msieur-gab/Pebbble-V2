@@ -12,10 +12,10 @@ import * as R2 from '../shared/r2.js';
 import * as L from './library.js';
 import { config } from '../shared/config.js';
 import { initI18n, setLanguage, language, LANGUAGES, t } from '../shared/i18n.js';
-import { $, esc, mmss, stone, plural, ICON, dedication, belongsTo, createSheets, toast, shake } from '../shared/ui.js';
+import { $, esc, mmss, stone, plural, ICON, dedication, belongsTo, createSheets, toast, shake, revealPasswords, hidePasswords } from '../shared/ui.js';
 
 const audio = $('audio');
-const VERSION = '2026-09-29 · 10:40'; // shown in Settings, to tell which version a phone runs
+const VERSION = '2026-09-29 · 11:10'; // shown in Settings, to tell which version a phone runs
 
 // ---------- state ----------
 let view = 'none';
@@ -26,7 +26,7 @@ let savedNote = '';
 const sheets = createSheets({
     base: 'player',
     onOpen: id => { if (id === 'settings-sheet') renderSettings(); },
-    onClose: () => { $('sleep-choices').hidden = true; },
+    onClose: () => { $('sleep-choices').hidden = true; hidePasswords(); },
     onChange: () => renderMini(),
 });
 
@@ -622,6 +622,7 @@ window.addEventListener('hashchange', () => { const f = takeFragment(); if (f) l
 navigator.serviceWorker?.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
 
 await initI18n();
+revealPasswords();
 const first = takeFragment();
 if (first) load(first);
 else home();

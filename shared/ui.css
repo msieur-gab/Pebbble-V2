@@ -105,6 +105,10 @@ a { color: inherit; }
 .field { display: block; width: 100%; padding: 15px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--field); font: inherit; color: var(--ink); margin: 0 0 14px; }
 .field:focus { outline: none; border-color: var(--ink); }
 .field.mono { font-family: var(--mono); font-size: .85rem; }
+.pw-field { position: relative; margin: 0 0 14px; }
+.pw-field .field { margin: 0; padding-right: 54px; }
+.reveal { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: var(--soft); }
+.reveal .icon { width: 20px; height: 20px; }
 .hint { font-family: var(--serif); font-style: italic; font-size: 1.1rem; margin: 0 0 18px; }
 .msg { color: var(--warn); font-size: .9rem; min-height: 1.4em; margin: 10px 0 0; text-align: center; }
 .shake { animation: shake .4s; }

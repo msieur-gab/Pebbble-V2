@@ -163,14 +163,17 @@
       "eyebrow": "Almost there",
       "title": "Choose a key phrase",
       "titleJoin": "Your key phrase",
-      "lead": "It opens your list of pebbbles on every device you set up. Use the same phrase everywhere. It is never saved or sent.",
+      "lead": "It opens your list of pebbbles on every device you set up. At least 12 characters: words, numbers, signs, as you like. It is never saved or sent.",
       "leadJoin": "The one you chose on your other device. It opens the setup code and your list of pebbbles.",
-      "placeholder": "Four or five words you'll remember",
+      "placeholder": "At least {n} characters",
       "lose": "Lose it and the list is gone, but the stones keep working: you can reopen each one by holding it to the phone.",
       "go": "Open my pebbbles",
       "opening": "Opening…",
-      "short": "Use at least three words.",
-      "wrong": "This key phrase doesn't open that code."
+      "short": "Use at least {n} characters. Length matters more than symbols.",
+      "wrong": "This key phrase doesn't open that code.",
+      "placeholderKnown": "Your key phrase",
+      "leadAgain": "The one you already use. It opens your list of pebbbles, and lets you set up other devices.",
+      "notSame": "That is not the key phrase this device knows. Check capitals and spaces."
     },
     "library": {
       "new": "New pebbble",
@@ -332,5 +335,9 @@
       "title": "Set up another device",
       "lead": "On the other device, choose “Paste a setup code”, paste this, then type your key phrase. Without the key phrase the code opens nothing."
     }
+  },
+  "common": {
+    "show": "Show password",
+    "hide": "Hide password"
   }
 }

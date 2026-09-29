@@ -45,7 +45,19 @@ const setupGuided = async (pg, phrase) => {
 };
 const on = (pg, id) => pg.waitForSelector(`#${id}.on`);
 const off = (pg, id) => pg.waitForSelector(`#${id}:not(.on)`, { state: 'attached' });
-await setupGuided(page, 'pierre de rivière');
+// A new key phrase needs 12 characters; the eye shows what was typed
+await page.goto(base + '/writer/');
+await page.click('#c-guide'); await on(page, 'guide-sheet');
+await page.fill('#g-public', 'https://pub-example.r2.dev');
+await page.fill('#g-endpoint', 'https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com');
+await page.fill('#g-key', 'key'); await page.fill('#g-secret', 'secret');
+await page.click('#g-connect'); await page.waitForSelector('#k-in');
+await page.fill('#k-in', 'short one'); await page.click('#k-go');
+log('short new key phrase refused:', await page.textContent('#k-msg'));
+await page.click('#k-in + .reveal');
+log('eye shows the phrase:', await page.$eval('#k-in', i => i.type), '| label now:', await page.$eval('#k-in + .reveal', b => b.getAttribute('aria-label')));
+await page.fill('#k-in', 'pierre de rivière'); await page.click('#k-go');
+await page.waitForSelector('#shelf');
 log('writer set up; shelf shows', await page.$$eval('#shelf button[data-id]', b => b.length), 'pebbbles');
 
 // A new pebbble: name, another stone, From / For, password, contact, three voices
@@ -294,6 +306,15 @@ await pc.fill('#k-in', 'pierre de rivière'); await pc.click('#k-go');
 await pc.waitForSelector('#shelf button[data-id]');
 log('my pebbbles (computer)', await pc.$$eval('#shelf button[data-id]', r => r.map(x => x.innerText.replace(/\n/g, ' | '))));
 log('computer without NFC says:', await pc.textContent('#tap-text'));
+// A device set up before setup codes asks for its phrase once, and only the same phrase opens the list
+await pc.evaluate(() => { const s = JSON.parse(localStorage.getItem('pebbble-writer-settings')); delete s.setupKey; localStorage.setItem('pebbble-writer-settings', JSON.stringify(s)); });
+await pc.reload(); await pc.waitForSelector('#k-in');
+await pc.fill('#k-in', 'Pierre de rivière'); await pc.click('#k-go');
+await pc.waitForFunction(() => document.getElementById('k-msg').textContent);
+log('same device, different phrase:', await pc.textContent('#k-msg'));
+await pc.fill('#k-in', 'pierre de rivière'); await pc.click('#k-go');
+await pc.waitForSelector('#shelf button[data-id]');
+log('same phrase: list back,', await pc.$$eval('#shelf button[data-id]', r => r.length), 'pebbble');
 
 // Change the password and hint on the computer; recordings untouched
 const before = readdirSync(`.dev-bucket/${id}`).filter(f => f !== 'header').map(f => f + readFileSync(`.dev-bucket/${id}/${f}`).length).sort().join();
