@@ -31,7 +31,7 @@ function saveSettings(s) {
 }
 const STORAGE_FIELDS = ['accountId', 'accessKeyId', 'secretAccessKey', 'bucket', 'publicBase'];
 const hasStorage = () => STORAGE_FIELDS.every(k => loadSettings()[k]);
-const hasKeys = () => !!loadSettings().libId;
+const hasKeys = () => !!(loadSettings().libId && loadSettings().setupKey); // devices set up before setup codes ask for the key phrase once
 
 function creds(s = loadSettings()) {
     if (config.devEndpoint) return { accountId: 'dev', accessKeyId: 'dev', secretAccessKey: 'dev', bucket: 'dev', endpoint: config.devEndpoint };
