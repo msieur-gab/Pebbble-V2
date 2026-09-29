@@ -658,9 +658,7 @@ async function save() {
     btn.disabled = true;
     try {
         const c = creds();
-        header.name = header.name.trim();
-        header.from = header.from.trim();
-        header.for = header.for.trim();
+        for (const k of ['name', 'from', 'for', 'contact']) header[k] = (header[k] ?? '').trim();
 
         const plan = s.pwPlan;
         if (plan === 'remove') {
