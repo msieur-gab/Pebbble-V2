@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#ecebe7">
+<title>Pebbble Writer Prototype</title>
+<link rel="icon" href="../player/icons/icon.svg" type="image/svg+xml">
+<style>
+/* Same system as the player prototype: stone-grey ground, paper sheets, ink stones, one moss accent. Light only (the stones are black). */
+:root {
+    --bg: #ecebe7; --paper: #f6f5f2; --ink: #1d1b18; --soft: #66625a; --faint: #9d988e; --line: #dcd8cf;
+    --accent: #3f5e4a; --accent-soft: #e3e8e2; --warn: #9a3b2a; --warn-soft: #f3e6e2; --field: #fff;
+    --serif: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --ease: cubic-bezier(.22, .8, .24, 1);
+    color-scheme: light;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--sans); overflow-x: hidden; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.serif { font-family: var(--serif); font-weight: 400; letter-spacing: -.01em; }
+.soft { color: var(--soft); } .faint { color: var(--faint); }
+.app { max-width: 440px; margin: 0 auto; min-height: 100%; position: relative; padding: 0 24px calc(120px + env(safe-area-inset-bottom)); }
+
+.stone svg { display: block; width: 100%; height: auto; }
+.stone.breathing { animation: breathe 6s var(--ease) infinite; }
+@keyframes breathe { 0%, 100% { transform: scale(1) rotate(0); } 50% { transform: scale(1.025) rotate(.6deg); } }
+.appear { animation: appear 1s var(--ease) both; }
+.appear.d1 { animation-delay: .2s; } .appear.d2 { animation-delay: .4s; } .appear.d3 { animation-delay: .6s; }
+@keyframes appear { from { opacity: .001; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+.primary { display: block; width: 100%; padding: 16px; border-radius: 999px; background: var(--ink); color: var(--paper); font-weight: 600; letter-spacing: .01em; text-align: center; }
+.primary:active { transform: scale(.98); }
+.ghost { display: block; width: 100%; padding: 14px; border-radius: 999px; border: 1px solid var(--line); text-align: center; }
+.link { color: var(--accent); font-weight: 600; font-size: .9rem; }
+.icon-btn { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; }
+.icon-btn:active { background: rgba(0,0,0,.05); }
+.icon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+.bar { display: flex; justify-content: space-between; align-items: center; height: 56px; margin: 0 -10px; padding-top: env(safe-area-inset-top); }
+.bar .title { font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; color: var(--soft); }
+.eyebrow { font-size: .78rem; letter-spacing: .16em; text-transform: uppercase; color: var(--soft); margin: 0; }
+
+/* welcome / setup */
+.welcome { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; gap: 0; padding: 72px 0 32px; }
+.welcome .stone { width: 120px; margin: 0 0 32px; }
+.welcome h1 { font-size: 2.1rem; line-height: 1.15; margin: 10px 0 12px; text-wrap: balance; }
+.welcome p.lead { color: var(--soft); margin: 0 0 32px; max-width: 34ch; }
+.choice { display: block; width: 100%; text-align: left; padding: 16px 18px; border: 1px solid var(--line); border-radius: 16px; margin-bottom: 10px; background: transparent; }
+.choice b { display: block; font-weight: 600; margin-bottom: 2px; }
+.choice span { font-size: .9rem; color: var(--soft); }
+.choice.selected { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.steps { list-style: none; margin: 0 0 28px; padding: 0; counter-reset: s; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 28px 1fr; gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); font-size: .95rem; }
+.steps li::before { content: counter(s); font-family: var(--serif); color: var(--faint); }
+.steps li.done::before { content: "✓"; color: var(--accent); }
+.steps li.done { color: var(--soft); }
+
+/* fields */
+.field { width: 100%; padding: 15px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--field); font: inherit; color: var(--ink); margin: 0 0 12px; }
+.field:focus { outline: none; border-color: var(--ink); }
+.field.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .85rem; }
+.note { font-size: .85rem; color: var(--soft); margin: 0 0 18px; line-height: 1.5; }
+.cap { display: block; font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--soft); margin: 0 0 8px; }
+
+/* library */
+.library h1 { font-size: 1.7rem; margin: 8px 0 24px; }
+.shelf { display: grid; grid-template-columns: 1fr 1fr; gap: 28px 20px; }
+.shelf button { text-align: center; }
+.shelf .stone { width: 78%; margin: 0 auto 12px; transition: transform .4s var(--ease); }
+.shelf button:active .stone { transform: scale(.96); }
+.shelf .name { font-family: var(--serif); font-size: 1.1rem; line-height: 1.25; }
+.shelf .sub { font-size: .8rem; color: var(--faint); }
+.shelf .new { display: flex; flex-direction: column; align-items: center; }
+.shelf .new i { display: grid; place-items: center; width: 78%; aspect-ratio: 1.15; margin: 0 auto 12px; border: 1.5px dashed var(--faint); border-radius: 46% 54% 50% 50% / 55% 45% 55% 45%; color: var(--soft); font-style: normal; font-size: 2rem; font-family: var(--serif); }
+.tap-hint { display: flex; align-items: center; gap: 14px; margin: 36px 0 0; padding: 16px 18px; border-radius: 16px; background: var(--paper); font-size: .9rem; color: var(--soft); }
+.tap-hint .mini-rings { width: 34px; height: 34px; flex: 0 0 34px; }
+
+/* editor */
+.ed-head { text-align: center; padding: 4px 0 8px; }
+.ed-head .stone { width: min(46vw, 180px); margin: 0 auto; }
+.reroll { margin: 10px auto 0; display: inline-flex; gap: 6px; align-items: center; font-size: .85rem; color: var(--soft); padding: 6px 12px; border-radius: 999px; }
+.reroll .icon { width: 16px; height: 16px; }
+.name-in { display: block; width: 100%; border: 0; background: transparent; text-align: center; font: 400 1.9rem/1.2 var(--serif); letter-spacing: -.01em; color: var(--ink); padding: 14px 0 4px; border-bottom: 1px solid transparent; }
+.name-in::placeholder { color: var(--faint); }
+.name-in:focus { outline: none; border-bottom-color: var(--line); }
+.dedic { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0 0; }
+.dedic label { display: flex; align-items: baseline; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--field); min-width: 0; }
+.dedic label span { font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--soft); flex: 0 0 auto; }
+.dedic input { border: 0; background: transparent; font: inherit; color: var(--ink); width: 100%; min-width: 0; padding: 0; }
+.dedic input:focus { outline: none; }
+.dedic input::placeholder { color: var(--faint); }
+
+.preview { margin: 18px 0 0; padding: 18px; border-radius: 18px; background: var(--paper); display: grid; grid-template-columns: 64px 1fr; gap: 16px; align-items: center; }
+.preview .stone { width: 64px; }
+.preview .pv-name { font-family: var(--serif); font-size: 1.2rem; line-height: 1.2; }
+.preview .pv-ded { font-family: var(--serif); font-style: italic; color: var(--soft); font-size: .98rem; margin-top: 2px; }
+.preview .pv-count { font-size: .8rem; color: var(--faint); margin-top: 4px; }
+.preview .pv-cap { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; font-size: .78rem; }
+.seg button { padding: 4px 10px; border-radius: 999px; color: var(--soft); }
+.seg button.on { background: var(--ink); color: var(--paper); }
+
+.section { margin: 34px 0 0; }
+.section-head { display: flex; justify-content: space-between; align-items: baseline; margin: 0 0 6px; }
+.section-head h2 { font-family: var(--serif); font-weight: 400; font-size: 1.35rem; margin: 0; }
+.voices { list-style: none; margin: 0; padding: 0; }
+.voice { display: flex; align-items: center; gap: 14px; padding: 14px 4px; border-top: 1px solid var(--line); cursor: pointer; }
+.voice:last-child { border-bottom: 1px solid var(--line); }
+.voice .n { width: 22px; text-align: center; font-size: .85rem; color: var(--faint); font-variant-numeric: tabular-nums; }
+.voice .t { flex: 1; min-width: 0; }
+.voice .d { font-size: .85rem; color: var(--faint); font-variant-numeric: tabular-nums; }
+.voice .wake { display: block; font-size: .8rem; color: var(--faint); }
+.voice.sleeping .t { color: var(--soft); }
+.voice.new-v .t::after { content: "new"; margin-left: 8px; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); padding: 2px 7px; border-radius: 999px; vertical-align: 2px; }
+.add-voice { display: flex; align-items: center; gap: 12px; width: 100%; padding: 16px 4px; color: var(--accent); font-weight: 600; }
+.add-voice i { display: grid; place-items: center; width: 22px; font-style: normal; font-size: 1.3rem; }
+
+.menu-row { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; padding: 16px 4px; border-top: 1px solid var(--line); }
+.menu-row:last-child { border-bottom: 1px solid var(--line); }
+.menu-row .txt { flex: 1; min-width: 0; }
+.menu-row b { display: block; font-weight: 600; }
+.menu-row span { font-size: .88rem; color: var(--soft); }
+.menu-row .state { font-size: .82rem; color: var(--faint); flex: 0 0 auto; }
+.menu-row.warn b { color: var(--warn); }
+
+.dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 14px 24px calc(16px + env(safe-area-inset-bottom)); background: linear-gradient(to top, var(--bg) 70%, rgba(236,235,231,0)); }
+.dock > div { max-width: 392px; margin: 0 auto; }
+
+/* write to stone */
+.write { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 0 32px; }
+.rings { position: relative; width: 220px; height: 220px; margin: 0 auto 32px; }
+.rings i { position: absolute; inset: 0; border: 1px solid var(--soft); border-radius: 50%; opacity: 0; animation: ring 3.6s var(--ease) infinite; }
+.rings i:nth-child(2) { animation-delay: 1.2s; } .rings i:nth-child(3) { animation-delay: 2.4s; }
+.rings .stone { position: absolute; inset: 28%; }
+@keyframes ring { from { transform: scale(.4); opacity: .7; } to { transform: scale(1); opacity: 0; } }
+.mini-rings { position: relative; }
+.mini-rings i { position: absolute; inset: 0; border: 1px solid var(--soft); border-radius: 50%; opacity: 0; animation: ring 3s var(--ease) infinite; }
+.mini-rings i:nth-child(2) { animation-delay: 1.5s; }
+.mini-rings b { position: absolute; inset: 34%; background: var(--ink); border-radius: 46% 54% 50% 50% / 55% 45% 55% 45%; }
+.write h1 { font-size: 1.8rem; margin: 0 0 8px; text-wrap: balance; }
+.write p { color: var(--soft); margin: 0 0 32px; max-width: 30ch; }
+.write .actions { width: 100%; max-width: 320px; display: grid; gap: 10px; }
+.check { width: 64px; height: 64px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; margin: 0 auto 20px; }
+.check .icon { width: 30px; height: 30px; stroke-width: 2; }
+.lock-card { margin: 28px 0 0; width: 100%; max-width: 320px; text-align: left; padding: 16px 18px; border-radius: 16px; border: 1px solid var(--line); }
+.lock-card b { display: block; font-weight: 600; }
+.lock-card span { font-size: .88rem; color: var(--soft); display: block; margin: 2px 0 10px; }
+.lock-card.confirm { background: var(--warn-soft); border-color: transparent; }
+.lock-card.confirm b { color: var(--warn); }
+
+/* sheets */
+.scrim { position: fixed; inset: 0; background: rgba(29,27,24,.28); opacity: 0; pointer-events: none; transition: opacity .35s var(--ease); z-index: 20; }
+.scrim.on { opacity: 1; pointer-events: auto; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; max-width: 440px; max-height: 92vh; overflow-y: auto; margin: 0 auto; background: var(--paper); border-radius: 22px 22px 0 0; padding: 10px 24px calc(28px + env(safe-area-inset-bottom)); transform: translateY(105%); transition: transform .45s var(--ease); z-index: 30; box-shadow: 0 -10px 40px rgba(0,0,0,.08); }
+.sheet.on { transform: none; }
+.handle { width: 38px; height: 4px; border-radius: 2px; background: var(--line); margin: 0 auto 18px; }
+.sheet h2 { font-family: var(--serif); font-weight: 400; font-size: 1.5rem; margin: 6px 0 6px; }
+.sheet p.lead { color: var(--soft); margin: 0 0 20px; }
+.hint-line { font-family: var(--serif); font-style: italic; font-size: 1.1rem; margin: 0 0 18px; }
+
+.rec { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 0 22px; }
+.rec-btn { position: relative; width: 96px; height: 96px; border-radius: 50%; border: 1.5px solid var(--ink); display: grid; place-items: center; }
+.rec-btn b { width: 60px; height: 60px; border-radius: 50%; background: var(--warn); transition: all .3s var(--ease); }
+.rec-btn.on b { width: 34px; height: 34px; border-radius: 8px; }
+.rec-btn.on::after { content: ""; position: absolute; inset: -10px; border-radius: 50%; border: 1px solid var(--warn); animation: ring 1.8s var(--ease) infinite; }
+.rec-time { font-variant-numeric: tabular-nums; font-size: 1.1rem; }
+.rec-or { font-size: .85rem; color: var(--soft); }
+.when { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 12px; }
+.when button { padding: 12px 6px; border-radius: 14px; border: 1px solid var(--line); font-size: .88rem; }
+.when button.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.two label { font-size: .78rem; color: var(--soft); }
+.two .field { margin-top: 4px; }
+.finder { margin: 4px 0 20px; padding: 16px; border-radius: 16px; background: var(--bg); text-align: center; font-size: .88rem; color: var(--soft); line-height: 1.55; }
+.finder b { color: var(--ink); font-weight: 600; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips button { padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line); }
+.chips button.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.set-group { margin: 22px 0 0; }
+.danger { color: var(--warn); padding: 12px 0; font-weight: 600; }
+.shake { animation: shake .4s; }
+@keyframes shake { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+
+.toast { position: fixed; left: 50%; top: calc(56px + env(safe-area-inset-top)); transform: translate(-50%, -12px); opacity: 0; background: var(--ink); color: var(--paper); padding: 10px 18px; border-radius: 999px; font-size: .88rem; transition: all .4s var(--ease); z-index: 60; pointer-events: none; white-space: nowrap; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+.scenes { position: fixed; top: calc(8px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 100; background: rgba(29,27,24,.82); color: #f6f5f2; border-radius: 999px; padding: 4px 6px 4px 14px; font-size: .78rem; display: flex; gap: 6px; align-items: center; backdrop-filter: blur(6px); }
+.scenes select { background: transparent; color: inherit; border: 0; font: inherit; font-weight: 600; max-width: 200px; }
+.scenes select option { color: var(--ink); }
+.scenes button { color: inherit; opacity: .7; padding: 2px 6px; }
+body.hide-scenes .scenes { display: none; }
+</style>
+</head>
+<body>
+
+<div class="scenes" id="scenes">
+    Scene
+    <select id="scene" aria-label="Scene">
+        <option value="welcome">1 · First time: connect storage</option>
+        <option value="key">2 · First time: your key phrase</option>
+        <option value="library">3 · My pebbbles</option>
+        <option value="new">4 · A new pebbble</option>
+        <option value="record">5 · Record a voice</option>
+        <option value="edit">6 · Editing a pebbble</option>
+        <option value="password">7 · Password and hint</option>
+        <option value="found">8 · If someone finds it</option>
+        <option value="write">9 · Write to the stone</option>
+        <option value="written">10 · Written (and lock the tag)</option>
+        <option value="unlock">11 · Open a locked pebbble</option>
+        <option value="settings">12 · Settings</option>
+    </select>
+    <button id="hide-scenes" title="Hide (tap the top edge to show again)">✕</button>
+</div>
+
+<div class="app" id="app"></div>
+<div class="dock" id="dock" hidden><div id="dock-inner"></div></div>
+<div class="scrim" id="scrim"></div>
+
+<!-- add / edit a voice -->
+<form class="sheet" id="voice-sheet" autocomplete="off" onsubmit="return false">
+    <div class="handle"></div>
+    <h2 id="v-head">A new voice</h2>
+    <div class="rec" id="v-rec">
+        <button type="button" class="rec-btn" id="rec-btn" aria-label="Record"><b></b></button>
+        <span class="rec-time" id="rec-time">0:00</span>
+        <span class="rec-or">or <button type="button" class="link" id="v-file">choose an audio file</button></span>
+    </div>
+    <label class="cap" for="v-title">Title</label>
+    <input class="field" id="v-title" placeholder="Good night, little one" data-lpignore="true">
+    <span class="cap">When can it be heard?</span>
+    <div class="when" id="v-when">
+        <button type="button" data-w="always" class="on">Always</button>
+        <button type="button" data-w="dates">Between dates</button>
+        <button type="button" data-w="yearly">Every year</button>
+    </div>
+    <div class="two" id="v-dates" hidden>
+        <label>Wakes on<input class="field" type="date" id="v-from" value="2038-03-14"></label>
+        <label>Sleeps again<input class="field" type="date" id="v-to" value="2038-03-21"></label>
+    </div>
+    <div class="two" id="v-yearly" hidden>
+        <label>Every year from<input class="field" id="v-ya" value="20 December"></label>
+        <label>until<input class="field" id="v-yb" value="27 December"></label>
+    </div>
+    <p class="note" id="v-when-note">Anyone who taps the stone can hear it.</p>
+    <button type="button" class="primary" id="v-save">Add this voice</button>
+    <button type="button" class="danger" id="v-remove" hidden style="display:block;margin:10px auto 0">Remove this voice</button>
+</form>
+
+<!-- password -->
+<form class="sheet" id="pw-sheet" autocomplete="off" onsubmit="return false">
+    <div class="handle"></div>
+    <h2>Password</h2>
+    <p class="lead">Optional. Without it, holding the stone is enough to listen.</p>
+    <label class="cap" for="pw-in">Password</label>
+    <input class="field" id="pw-in" type="password" placeholder="A word they know" autocomplete="new-password" data-lpignore="true">
+    <p class="note">Capitals, extra spaces and accents don't matter (é = e). Digits and symbols must match.</p>
+    <label class="cap" for="pw-hint">Hint, shown to everyone</label>
+    <input class="field" id="pw-hint" value="What you throw in the river" data-lpignore="true">
+    <button type="button" class="primary" id="pw-save">Keep this password</button>
+    <button type="button" class="danger" id="pw-remove" style="display:block;margin:10px auto 0">Remove the password</button>
+</form>
+
+<!-- if found -->
+<form class="sheet" id="found-sheet" autocomplete="off" onsubmit="return false">
+    <div class="handle"></div>
+    <h2>If someone finds it</h2>
+    <p class="lead">Anyone who taps the stone sees this, even without the password.</p>
+    <label class="cap" for="f-contact">Contact</label>
+    <input class="field" id="f-contact" value="papa@example.com" data-lpignore="true">
+    <span class="cap">They will read</span>
+    <div class="finder" id="finder"></div>
+    <button type="button" class="primary" id="f-save">Done</button>
+</form>
+
+<!-- settings -->
+<div class="sheet" id="settings-sheet">
+    <div class="handle"></div>
+    <h2>Settings</h2>
+    <div class="set-group">
+        <span class="cap">Language</span>
+        <div class="chips" id="langs"><button class="on">English</button><button>Français</button><button>Español</button><button>中文</button></div>
+    </div>
+    <div class="set-group">
+        <span class="cap">Storage</span>
+        <button class="menu-row" id="s-storage"><span class="txt"><b>Connected</b><span>Bucket “pebbble” · 14 MB of 10 GB free</span></span></button>
+        <button class="menu-row" id="s-share"><span class="txt"><b>Set up another phone</b><span>Shows a code to scan with it</span></span></button>
+        <button class="menu-row" id="s-key"><span class="txt"><b>Key phrase</b><span>Opens your list of pebbbles on any phone</span></span></button>
+    </div>
+    <div class="set-group">
+        <button class="danger" id="s-disconnect">Disconnect this phone</button>
+    </div>
+    <p class="note" style="margin-top:12px">Pebbble · writer prototype</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { pebbleCover } from '../shared/cover.js';
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const mmss = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+const stone = (seed, detail = 'full') => pebbleCover(seed, { detail });
+
+const ICON = {
+    back: '<svg class="icon" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>',
+    gear: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>',
+    reroll: '<svg class="icon" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg>',
+    moon: '<svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
+    check: '<svg class="icon" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    chev: '<svg class="icon" viewBox="0 0 24 24" style="width:18px;height:18px;color:var(--faint)"><path d="M9 6l6 6-6 6"/></svg>',
+};
+
+// ---------- example content (pretend pebbbles) ----------
+const PEBBBLES = [
+    { seed: 'SefrxbIguCTBXJL9', name: 'Lullabies', from: 'Papa', for: 'Lina', contact: 'papa@example.com', voices: [
+        { t: 'Good night, little one', d: 142 }, { t: 'The river song', d: 201 }, { t: 'Counting stars', d: 95 },
+        { t: 'Christmas morning', d: 120, wake: 'Every year, 20–27 December' }, { t: 'For your eighteenth birthday', d: 88, wake: 'Wakes on 14 March 2038' } ] },
+    { seed: 'AIxRfp43lV4stGBZ', name: 'Letters from Munich', from: 'Papa', for: 'Mia', contact: 'papa@example.com', hint: 'What you throw in the river', voices: [
+        { t: 'The workshop smells of cedar', d: 174 }, { t: 'A walk by the Isar', d: 233 }, { t: 'Why the sky turns orange', d: 118 } ] },
+    { seed: 'Z9d12eqgKNpSxCnJ', name: 'Summer 2026', from: 'Gab', for: '', contact: 'gab@example.com', voices: [
+        { t: 'Waves at Étretat', d: 305 }, { t: 'The cicadas', d: 61 } ] },
+];
+
+const S = { view: 'welcome', p: null, isNew: false, phrasing: 'tag', setup: null, lockConfirm: false, editIdx: -1, when: 'always' };
+
+// The sentence under a pebbble's name, shown on the player's arrival screen.
+function dedication(p, style = S.phrasing) {
+    const from = (p.from || '').trim(), to = (p.for || '').trim();
+    if (!from && !to) return '';
+    if (style === 'love') return [from && `made with love by ${from}`, to && `for ${to}`].filter(Boolean).join(' ');
+    return [to && `for ${to}`, from && `from ${from}`].filter(Boolean).join(' · ');
+}
+const finderNote = p => {
+    const who = (p.for || p.from || '').trim();
+    return `${who ? `This pebbble belongs to <b>${esc(who)}</b>.<br>` : ''}If you found it, please contact<br><b>${esc(p.contact || '…')}</b>`;
+};
+const countLine = (p, inside = '') => {
+    const open = p.voices.filter(v => !v.wake).length, asleep = p.voices.length - open;
+    return `${p.voices.length} voice${p.voices.length === 1 ? '' : 's'}${inside}${asleep ? ` · ${asleep} sleeping` : ''}`;
+};
+
+// ---------- views ----------
+function render() {
+    const app = $('app'), dock = $('dock');
+    dock.hidden = true;
+    if (S.view === 'welcome') {
+        app.innerHTML = `<section class="welcome">
+            <div class="stone breathing appear">${stone('pebbble-1')}</div>
+            <p class="eyebrow appear d1">Pebbble writer</p>
+            <h1 class="serif appear d1">Where should the voices live?</h1>
+            <p class="lead appear d2">Pebbbles keep their voices, encrypted, in your own storage. Connect it once on this phone.</p>
+            <div class="appear d3">
+                <button class="choice" id="c-scan"><b>Scan a code from my other phone</b><span>If the writer is already set up somewhere else.</span></button>
+                <button class="choice" id="c-guide"><b>Set up my storage</b><span>A guided walk through Cloudflare, about 10 minutes.</span></button>
+                <button class="choice" id="c-paste"><b>Paste a setup code</b><span>One line that carries everything.</span></button>
+            </div>
+            <div id="setup-detail"></div>
+        </section>`;
+        renderSetupDetail();
+        $('c-scan').onclick = () => { S.setup = 'scan'; renderSetupDetail(); };
+        $('c-guide').onclick = () => { S.setup = 'guide'; renderSetupDetail(); };
+        $('c-paste').onclick = () => { S.setup = 'paste'; renderSetupDetail(); };
+    }
+    else if (S.view === 'key') {
+        app.innerHTML = `<section class="welcome">
+            <div class="stone appear">${stone('pebbble-1')}</div>
+            <p class="eyebrow appear d1">Almost there</p>
+            <h1 class="serif appear d1">Choose a key phrase</h1>
+            <p class="lead appear d2">It opens your list of pebbbles on any phone you set up. Use the same phrase everywhere. It is never saved or sent.</p>
+            <form class="appear d3" autocomplete="off" onsubmit="return false">
+                <input class="field" id="k-in" type="password" placeholder="Four or five words you'll remember" autocomplete="new-password" data-lpignore="true">
+                <p class="note">Lose it and the list is gone, but the stones keep working. You can reopen each one by tapping it.</p>
+                <button type="button" class="primary" id="k-go">Open my pebbbles</button>
+            </form>
+        </section>`;
+        $('k-go').onclick = () => go('library');
+    }
+    else if (S.view === 'library') {
+        app.innerHTML = `<div class="bar"><span></span><span class="title">Writer</span><button class="icon-btn" id="gear" aria-label="Settings">${ICON.gear}</button></div>
+            <section class="library"><h1 class="serif">My pebbbles</h1>
+            <div class="shelf">
+                ${PEBBBLES.map((p, i) => `<button data-i="${i}"><div class="stone">${stone(p.seed, 'thumb')}</div><div class="name">${esc(p.name)}</div><div class="sub">${esc(dedication(p, 'tag'))}</div></button>`).join('')}
+                <button class="new" id="new"><i>+</i><div class="name">New pebbble</div><div class="sub">&nbsp;</div></button>
+            </div>
+            <div class="tap-hint"><div class="mini-rings"><i></i><i></i><b></b></div><span>Hold a stone to the back of the phone to open it here.</span></div>
+            </section>`;
+        $('gear').onclick = () => openSheet('settings-sheet');
+        $('new').onclick = () => newPebbble();
+        for (const b of app.querySelectorAll('.shelf button[data-i]')) b.onclick = () => openPebbble(PEBBBLES[+b.dataset.i]);
+    }
+    else if (S.view === 'editor') renderEditor();
+    else if (S.view === 'write') {
+        app.innerHTML = `<div class="bar"><button class="icon-btn" id="cancel" aria-label="Cancel">${ICON.back}</button><span class="title">Write</span><span style="width:44px"></span></div>
+            <section class="write">
+                <div class="rings"><i></i><i></i><i></i><div class="stone breathing">${stone(S.p.seed, 'thumb')}</div></div>
+                <h1 class="serif">Hold the stone to the back of your phone</h1>
+                <p>Keep it still until the phone buzzes. It takes a second.</p>
+                <p class="faint" style="font-size:.85rem;margin:0">Saving “${esc(S.p.name || 'Untitled')}” · 2 voices uploaded</p>
+            </section>`;
+        $('cancel').onclick = () => go('editor');
+        clearTimeout(S.writeT); S.writeT = setTimeout(() => { if (S.view === 'write') go('written'); }, 3200);
+    }
+    else if (S.view === 'written') {
+        app.innerHTML = `<section class="write">
+                <div class="check">${ICON.check}</div>
+                <h1 class="serif">“${esc(S.p.name || 'Untitled')}” is in the stone</h1>
+                <p>Tap it with any phone to listen.</p>
+                <div class="actions">
+                    <button class="primary" id="w-try">Listen now</button>
+                    <button class="ghost" id="w-copy">Copy its link</button>
+                    <button class="ghost" id="w-done">Back to my pebbbles</button>
+                </div>
+                <div class="lock-card ${S.lockConfirm ? 'confirm' : ''}" id="lock-card">
+                    ${S.lockConfirm
+                        ? `<b>Lock this tag for good?</b><span>No phone will ever rewrite it, including yours. Voices can still be added and changed. This can't be undone.</span>
+                           <div class="two"><button class="ghost" id="lock-no">Not now</button><button class="primary" style="background:var(--warn)" id="lock-yes">Lock it</button></div>`
+                        : `<b>Lock the tag</b><span>Stops anyone from rewriting what the stone points to. Do this only once the address is final.</span>
+                           <button class="link" id="lock-ask">Lock this tag…</button>`}
+                </div>
+            </section>`;
+        $('w-try').onclick = () => toast('Opens the player');
+        $('w-copy').onclick = () => toast('Link copied');
+        $('w-done').onclick = () => { S.lockConfirm = false; go('library'); };
+        if (S.lockConfirm) { $('lock-no').onclick = () => { S.lockConfirm = false; render(); }; $('lock-yes').onclick = () => { S.lockConfirm = false; toast('Tag locked'); render(); }; }
+        else $('lock-ask').onclick = () => { S.lockConfirm = true; render(); };
+    }
+    else if (S.view === 'unlock') {
+        const p = PEBBBLES[1];
+        app.innerHTML = `<div class="bar"><button class="icon-btn" id="back" aria-label="Back">${ICON.back}</button><span class="title">Edit</span><span style="width:44px"></span></div>
+            <section class="welcome" style="min-height:auto;padding-top:24px;text-align:center;align-items:center">
+                <div class="stone" style="margin:0 auto 24px;width:140px">${stone(p.seed)}</div>
+                <h1 class="serif" style="font-size:1.8rem;margin:0 0 6px">${esc(p.name)}</h1>
+                <p class="lead" style="margin:0 0 24px">Its voices are locked. The hint says:</p>
+                <p class="hint-line">${esc(p.hint)}</p>
+                <form style="width:100%" autocomplete="off" onsubmit="return false">
+                    <input class="field" id="u-pw" type="password" placeholder="Password" autocomplete="off" data-lpignore="true">
+                    <button type="button" class="primary" id="u-go">Open to edit</button>
+                </form>
+                <p class="faint" style="font-size:.85rem;margin:12px 0 0">Try “caillou”.</p>
+            </section>`;
+        $('back').onclick = () => go('library');
+        $('u-go').onclick = () => {
+            if ($('u-pw').value.trim().toLowerCase() === 'caillou') openPebbble(p);
+            else { $('u-pw').classList.remove('shake'); void $('u-pw').offsetWidth; $('u-pw').classList.add('shake'); }
+        };
+    }
+    window.scrollTo(0, 0);
+}
+
+function renderSetupDetail() {
+    const box = $('setup-detail'); if (!box) return;
+    for (const [id, k] of [['c-scan', 'scan'], ['c-guide', 'guide'], ['c-paste', 'paste']]) $(id).classList.toggle('selected', S.setup === k);
+    if (S.setup === 'scan') box.innerHTML = `<p class="note" style="margin-top:8px">On the other phone: Settings → Set up another phone. Then point this camera at the code.</p><button class="primary" id="go-next">Open the camera</button>`;
+    else if (S.setup === 'guide') box.innerHTML = `<ol class="steps" style="margin-top:14px">
+            <li class="done">Create a free Cloudflare account</li>
+            <li class="done">Create a storage bucket named “pebbble”</li>
+            <li><div>Allow public reading of the bucket<br><span class="faint" style="font-size:.85rem">Files stay encrypted. Public only means anyone with a stone can fetch them.</span></div></li>
+            <li>Create an access key and paste it here</li>
+        </ol><button class="primary" id="go-next">Continue with step 3</button>`;
+    else if (S.setup === 'paste') box.innerHTML = `<form autocomplete="off" onsubmit="return false" style="margin-top:8px"><input class="field mono" id="code-in" placeholder="pebbble-setup:…" data-lpignore="true"><button type="button" class="primary" id="go-next">Connect</button></form>`;
+    else box.innerHTML = '';
+    if ($('go-next')) $('go-next').onclick = () => go('key');
+}
+
+function renderEditor() {
+    const p = S.p;
+    $('app').innerHTML = `<div class="bar"><button class="icon-btn" id="back" aria-label="My pebbbles">${ICON.back}</button><span class="title">${S.isNew ? 'New pebbble' : 'Edit'}</span><span style="width:44px"></span></div>
+        <form autocomplete="off" onsubmit="return false">
+        <div class="ed-head">
+            <div class="stone" id="e-stone">${stone(p.seed)}</div>
+            ${S.isNew ? `<button type="button" class="reroll" id="reroll">${ICON.reroll}Another stone</button>` : ''}
+            <input class="name-in" id="e-name" value="${esc(p.name)}" placeholder="Name this pebbble" aria-label="Pebbble name" data-lpignore="true">
+        </div>
+        <div class="dedic">
+            <label><span>From</span><input id="e-from" value="${esc(p.from)}" placeholder="You" data-lpignore="true"></label>
+            <label><span>For</span><input id="e-for" value="${esc(p.for)}" placeholder="Optional" data-lpignore="true"></label>
+        </div>
+        </form>
+        <div class="preview" id="preview"></div>
+
+        <div class="section">
+            <div class="section-head"><h2>Voices</h2><span class="faint" style="font-size:.85rem">${p.voices.length ? countLine(p) : ''}</span></div>
+            <ul class="voices">${p.voices.map((v, i) => `<li class="voice ${v.wake ? 'sleeping' : ''} ${v.fresh ? 'new-v' : ''}" data-i="${i}">
+                <span class="n">${v.wake ? ICON.moon : i + 1}</span>
+                <span class="t">${esc(v.t)}${v.wake ? `<span class="wake">${esc(v.wake)}</span>` : ''}</span>
+                <span class="d">${mmss(v.d)}</span></li>`).join('')}</ul>
+            <button class="add-voice" id="add-voice"><i>+</i>Record or add a voice</button>
+        </div>
+
+        <div class="section">
+            <div class="section-head"><h2>Keeping it safe</h2></div>
+            <div>
+                <button class="menu-row" id="r-pw"><span class="txt"><b>Password</b><span>${p.hint ? `Hint: ${esc(p.hint)}` : 'None. Holding the stone is enough.'}</span></span>${ICON.chev}</button>
+                <button class="menu-row" id="r-found"><span class="txt"><b>If someone finds it</b><span>${esc(p.contact || 'Add a contact')}</span></span>${ICON.chev}</button>
+            </div>
+        </div>
+        ${S.isNew ? '' : `<div class="section"><div>
+            <button class="menu-row" id="r-write"><span class="txt"><b>Write to another stone</b><span>Same voices, a second stone</span></span>${ICON.chev}</button>
+            <button class="menu-row warn" id="r-delete"><span class="txt"><b>Delete this pebbble</b><span>The stone will play nothing</span></span></button>
+        </div></div>`}`;
+    renderPreview();
+    $('back').onclick = () => go('library');
+    if ($('reroll')) $('reroll').onclick = () => { p.seed = Math.random().toString(36).slice(2, 12); $('e-stone').innerHTML = stone(p.seed); renderPreview(); };
+    $('e-name').oninput = e => { p.name = e.target.value; renderPreview(); };
+    $('e-from').oninput = e => { p.from = e.target.value; renderPreview(); };
+    $('e-for').oninput = e => { p.for = e.target.value; renderPreview(); };
+    $('add-voice').onclick = () => openVoice(-1);
+    for (const li of $('app').querySelectorAll('.voice')) li.onclick = () => openVoice(+li.dataset.i);
+    $('r-pw').onclick = () => { $('pw-hint').value = p.hint || ''; openSheet('pw-sheet'); };
+    $('r-found').onclick = () => { $('f-contact').value = p.contact || ''; $('finder').innerHTML = finderNote(p); openSheet('found-sheet'); };
+    if ($('r-write')) $('r-write').onclick = () => go('write');
+    if ($('r-delete')) $('r-delete').onclick = () => toast('Asks twice, like Forget in the player');
+
+    $('dock').hidden = false;
+    $('dock-inner').innerHTML = S.isNew
+        ? `<button class="primary" id="d-go">Save and write to a stone</button>`
+        : `<button class="primary" id="d-go">Save changes</button>`;
+    $('d-go').onclick = () => {
+        if (!p.voices.length) return toast('Add a voice first');
+        S.isNew ? go('write') : (toast('Saved. The stone plays the new version.'), go('library'));
+    };
+}
+
+function renderPreview() {
+    const p = S.p, d = dedication(p);
+    $('preview').innerHTML = `<div class="stone">${stone(p.seed, 'thumb')}</div>
+        <div style="min-width:0">
+            <div class="pv-name">${esc(p.name || 'Name this pebbble')}</div>
+            ${d ? `<div class="pv-ded">${esc(d)}</div>` : ''}
+            <div class="pv-count">${p.voices.length ? countLine(p, ' inside') : 'No voices yet'}</div>
+        </div>
+        <div class="pv-cap"><span class="cap" style="margin:0">What people see when they tap</span>
+            <span class="seg" role="group" aria-label="Phrasing"><button data-s="tag" class="${S.phrasing === 'tag' ? 'on' : ''}">for · from</button><button data-s="love" class="${S.phrasing === 'love' ? 'on' : ''}">made with love</button></span></div>`;
+    for (const b of $('preview').querySelectorAll('.seg button')) b.onclick = () => { S.phrasing = b.dataset.s; renderPreview(); };
+}
+
+// ---------- voice sheet ----------
+let recT = null, recS = 0;
+function setWhen(w) {
+    S.when = w;
+    for (const b of $('v-when').children) b.classList.toggle('on', b.dataset.w === w);
+    $('v-dates').hidden = w !== 'dates';
+    $('v-yearly').hidden = w !== 'yearly';
+    $('v-when-note').textContent = { always: 'Anyone who taps the stone can hear it.', dates: 'It sleeps until then, and after. The list shows when it wakes.', yearly: 'It wakes every year for those days, then sleeps again.' }[w];
+}
+function openVoice(i) {
+    S.editIdx = i;
+    const v = i >= 0 ? S.p.voices[i] : null;
+    $('v-head').textContent = v ? 'This voice' : 'A new voice';
+    $('v-rec').hidden = !!v;
+    $('v-title').value = v ? v.t : '';
+    $('v-save').textContent = v ? 'Keep changes' : 'Add this voice';
+    $('v-remove').hidden = !v;
+    setWhen(v?.wake ? (v.wake.startsWith('Every') ? 'yearly' : 'dates') : 'always');
+    stopRec(); recS = 0; $('rec-time').textContent = '0:00';
+    openSheet('voice-sheet');
+}
+function stopRec() { clearInterval(recT); recT = null; $('rec-btn').classList.remove('on'); }
+$('rec-btn').onclick = () => {
+    if (recT) return stopRec();
+    $('rec-btn').classList.add('on');
+    recT = setInterval(() => { recS++; $('rec-time').textContent = mmss(recS); }, 1000);
+};
+$('v-file').onclick = () => { recS = 187; $('rec-time').textContent = 'waves.m4a · 3:07'; };
+for (const b of $('v-when').children) b.onclick = () => setWhen(b.dataset.w);
+$('v-save').onclick = () => {
+    stopRec();
+    const t = $('v-title').value.trim() || 'Untitled voice';
+    const wake = S.when === 'dates' ? 'Wakes on 14 March 2038' : S.when === 'yearly' ? 'Every year, 20–27 December' : undefined;
+    if (S.editIdx >= 0) Object.assign(S.p.voices[S.editIdx], { t, wake });
+    else S.p.voices.push({ t, d: recS || 64, wake, fresh: true });
+    closeSheets(); renderEditor();
+};
+$('v-remove').onclick = () => { S.p.voices.splice(S.editIdx, 1); closeSheets(); renderEditor(); };
+$('pw-save').onclick = () => { S.p.hint = $('pw-hint').value.trim() || 'No hint'; closeSheets(); renderEditor(); };
+$('pw-remove').onclick = () => { S.p.hint = ''; closeSheets(); renderEditor(); };
+$('f-contact').oninput = e => { S.p.contact = e.target.value; $('finder').innerHTML = finderNote(S.p); };
+$('f-save').onclick = () => { closeSheets(); renderEditor(); };
+$('s-share').onclick = () => toast('Shows a QR code with the setup');
+$('s-key').onclick = () => toast('Change the key phrase');
+$('s-storage').onclick = () => toast('Shows the bucket and keys, for experts');
+$('s-disconnect').onclick = () => toast('Asks twice. Stones keep working.');
+for (const b of $('langs').children) b.onclick = () => { for (const c of $('langs').children) c.classList.toggle('on', c === b); };
+
+// ---------- navigation ----------
+function newPebbble() {
+    S.p = { seed: Math.random().toString(36).slice(2, 12), name: '', from: 'Papa', for: '', contact: 'papa@example.com', voices: [] };
+    S.isNew = true; go('editor');
+}
+function openPebbble(p) { S.p = structuredClone(p); S.isNew = false; go('editor'); }
+function go(view) { closeSheets(); S.view = view; render(); }
+function openSheet(id) { closeSheets(true); $('scrim').classList.add('on'); $(id).classList.add('on'); }
+function closeSheets(keepScrim) { stopRec(); for (const s of document.querySelectorAll('.sheet.on')) s.classList.remove('on'); if (!keepScrim) $('scrim').classList.remove('on'); }
+$('scrim').onclick = () => closeSheets();
+let toastT;
+function toast(msg) { $('toast').textContent = msg; $('toast').classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => $('toast').classList.remove('on'), 2200); }
+
+function scene(name) {
+    S.setup = null; S.lockConfirm = false;
+    if (name === 'welcome') go('welcome');
+    else if (name === 'key') go('key');
+    else if (name === 'library') go('library');
+    else if (name === 'new') { newPebbble(); S.p.name = 'Birthday voices'; S.p.for = 'Lina'; render(); }
+    else if (name === 'record') { newPebbble(); S.p.name = 'Birthday voices'; S.p.for = 'Lina'; S.p.voices.push({ t: 'Happy birthday, big girl', d: 74, fresh: true }); render(); openVoice(-1); $('rec-btn').click(); }
+    else if (name === 'edit') openPebbble(PEBBBLES[0]);
+    else if (name === 'password') { openPebbble(PEBBBLES[1]); $('r-pw').click(); }
+    else if (name === 'found') { openPebbble(PEBBBLES[0]); $('r-found').click(); }
+    else if (name === 'write') { openPebbble(PEBBBLES[0]); S.p.name = 'Lullabies'; go('write'); }
+    else if (name === 'written') { S.p = structuredClone(PEBBBLES[0]); go('written'); }
+    else if (name === 'unlock') go('unlock');
+    else if (name === 'settings') { go('library'); openSheet('settings-sheet'); }
+    $('scene').value = name;
+}
+$('scene').onchange = e => scene(e.target.value);
+$('hide-scenes').onclick = () => document.body.classList.add('hide-scenes');
+document.addEventListener('click', e => { if (e.clientY < 12) document.body.classList.remove('hide-scenes'); });
+const start = (location.hash || '').slice(1);
+scene([...$('scene').options].some(o => o.value === start) ? start : 'welcome');
+</script>
+</body>
+</html>
