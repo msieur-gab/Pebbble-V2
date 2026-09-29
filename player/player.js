@@ -11,30 +11,11 @@ import * as F from '../shared/format.js';
 import * as R2 from '../shared/r2.js';
 import * as L from './library.js';
 import { config } from '../shared/config.js';
-import { pebbleCover } from '../shared/cover.js';
 import { initI18n, setLanguage, language, LANGUAGES, t } from '../shared/i18n.js';
+import { $, esc, mmss, stone, plural, ICON, dedication, belongsTo, createSheets, toast, shake } from '../shared/ui.js';
 
-const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const mmss = s => (isFinite(s) ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}` : '0:00');
-const stone = (seed, detail = 'full') => pebbleCover(seed, { detail });
 const audio = $('audio');
-const VERSION = '2026-09-28 · 15:40b'; // shown in Settings, to tell which version a phone runs
-
-const ICON = {
-    play: '<svg class="icon" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z"/></svg>',
-    pause: '<svg class="icon" viewBox="0 0 24 24"><rect x="6.5" y="5" width="4" height="14" rx="1"/><rect x="13.5" y="5" width="4" height="14" rx="1"/></svg>',
-    playSmall: '<svg class="icon" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" fill="currentColor" stroke="none"/></svg>',
-    pauseSmall: '<svg class="icon" viewBox="0 0 24 24"><rect x="6.5" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/><rect x="13.5" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/></svg>',
-    repeat: '<svg class="icon" viewBox="0 0 24 24"><path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 0 1 3-3h13"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/></svg>',
-    moon: '<svg class="icon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
-    moonSmall: '<svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
-    settings: '<svg class="icon" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>',
-    dots: '<svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/></svg>',
-    back: '<svg class="icon" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>',
-    pen: '<svg class="icon" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg>',
-    leaf: '<svg class="icon" viewBox="0 0 24 24"><path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14z"/><path d="M5 19l7-7"/></svg>',
-};
+const VERSION = '2026-09-29 · 11:00'; // shown in Settings, to tell which version a phone runs
 
 // ---------- state ----------
 let view = 'none';
@@ -42,11 +23,18 @@ let p = null, header = null, sealedHeader = null, pwKey = null, offline = false,
 const PL = { idx: -1, repeat: 'off', sleep: 0, sleepAt: 0, url: null, loading: false };
 let savedNote = '';
 
+const sheets = createSheets({
+    base: 'player',
+    onOpen: id => { if (id === 'settings-sheet') renderSettings(); },
+    onClose: () => { $('sleep-choices').hidden = true; },
+    onChange: () => renderMini(),
+});
+
 const seed = () => F.coverSeed(header, p.id);
 const windowOf = tr => F.windowStatus(tr.window);
 const openIdx = () => header.tracks.map((tr, i) => [tr, i]).filter(([tr]) => windowOf(tr).state === 'open').map(([, i]) => i);
-const fmtDate = d => d.toLocaleDateString(language(), { day: 'numeric', month: 'long' });
-const plural = (key, count, extra = {}) => t(count === 1 ? `${key}_one` : key, { count, ...extra });
+// The year shows only when it isn't this one (an eighteenth-birthday voice, years ahead).
+const fmtDate = d => d.toLocaleDateString(language(), { day: 'numeric', month: 'long', ...(d.getFullYear() !== new Date().getFullYear() && { year: 'numeric' }) });
 
 // ---------- views ----------
 
@@ -65,14 +53,15 @@ function showStatus(text) {
 function renderArrival() {
     view = 'arrival';
     const open = openIdx().length, asleep = header.tracks.filter(tr => windowOf(tr).state === 'locked').length;
-    const { name, contact } = header.owner;
+    const who = belongsTo(header), { contact } = header, ded = dedication(header);
     draw(`<section class="arrival">
         <p class="eyebrow appear">${t(known ? 'arrival.back' : 'arrival.found')}</p>
         <div class="stone appear d1">${stone(seed())}</div>
         ${header.name ? `<h1 class="serif appear d2">${esc(header.name)}</h1>` : '<div style="height:28px"></div>'}
+        ${ded ? `<p class="dedication appear d2">${esc(ded)}</p>` : ''}
         <p class="count soft appear d2">${plural('arrival.voices', open)}${asleep ? t('arrival.asleep', { count: asleep }) : ''}</p>
         <button class="primary appear d3" id="listen">${t('arrival.listen')}</button>
-        ${name || contact ? `<p class="owner-note appear d4">${name ? t('arrival.owner', { name: `<b>${esc(name)}</b>` }) : ''}${contact ? `<br>${t('arrival.write', { contact: `<a href="mailto:${esc(contact)}">${esc(contact)}</a>` })}` : ''}</p>` : ''}
+        ${contact ? `<p class="owner-note appear d4">${who ? `${t('arrival.owner', { name: `<b>${esc(who)}</b>` })}<br>` : ''}${t('arrival.write', { contact: `<a href="mailto:${esc(contact)}">${esc(contact)}</a>` })}</p>` : ''}
         ${offline ? `<p class="saved-note">${t('status.offline')}</p>` : ''}
     </section>`);
     $('listen').onclick = proceed;
@@ -80,9 +69,9 @@ function renderArrival() {
 
 /** The pebbble sheet's static parts: name, voices, owner line, notes. */
 function renderSheet() {
-    const { name, contact } = header.owner;
+    const name = belongsTo(header), { contact } = header;
     if (!$('player').classList.contains('on')) { $('pl-scroll').scrollTop = 0; $('player').classList.remove('compact'); }
-    $('pl-name').textContent = header.name || name || '';
+    $('pl-name').textContent = header.name || name;
     $('pl-status').hidden = !offline && header.tracks.length > 0;
     $('pl-status').textContent = header.tracks.length ? t('status.offline') : t('status.empty');
     $('controls').hidden = openIdx().length === 0;
@@ -97,10 +86,9 @@ function renderVoices() {
     const playing = !audio.paused;
     $('voices').innerHTML = header.tracks.map((tr, i) => {
         const w = windowOf(tr);
-        if (w.state === 'locked') return `<li class="voice sleeping"><span class="n">${ICON.moonSmall}</span><span class="t">${esc(tr.title)}<span class="wake">${t('voice.wakes', { date: fmtDate(w.opens) })}</span></span></li>`;
-        if (w.state === 'past') return `<li class="voice sleeping"><span class="n">·</span><span class="t">${esc(tr.title)}<span class="wake">${t('voice.quiet')}</span></span></li>`;
+        if (w.state === 'locked') return `<li class="voice sleeping"><span class="n">${ICON.moon}</span><span class="t">${esc(tr.title)}<span class="wake">${t('voice.wakes', { date: fmtDate(w.opens) })}</span></span></li>`;
         const cur = i === PL.idx;
-        return `<li class="voice ${cur ? 'current' : ''}" data-i="${i}"><span class="n">${cur ? `<span class="eq ${playing ? '' : 'paused'}"><i></i><i></i><i></i></span>` : i + 1}</span><span class="t">${esc(tr.title)}${w.closes ? `<span class="wake">${t('voice.until', { date: fmtDate(w.closes) })}</span>` : ''}</span><span class="d">${tr.duration ? mmss(tr.duration) : ''}</span></li>`;
+        return `<li class="voice ${cur ? 'current' : ''}" data-i="${i}"><span class="n">${cur ? `<span class="eq ${playing ? '' : 'paused'}"><i></i><i></i><i></i></span>` : i + 1}</span><span class="t">${esc(tr.title)}</span><span class="d">${mmss(tr.duration)}</span></li>`;
     }).join('');
     for (const li of $('voices').querySelectorAll('.voice[data-i]')) li.onclick = () => (+li.dataset.i === PL.idx ? toggle() : playAt(+li.dataset.i));
 }
@@ -117,7 +105,7 @@ async function renderLibrary() {
     } else {
         draw(`${bar}<section class="library"><h1 class="serif">${t('library.title')}</h1>${installCard()}
             <div class="shelf" id="shelf">${saved.map(rec => `<button data-id="${esc(rec.id)}"><div class="stone">${stone(rec.cover || rec.id)}</div>
-                <div class="name">${esc(rec.title || rec.name || '')}</div><div class="sub">${plural('library.count', rec.count)}</div></button>`).join('')}</div></section>`);
+                <div class="name">${esc(rec.title)}</div><div class="sub">${plural('library.count', rec.count)}</div></button>`).join('')}</div></section>`);
         for (const b of $('shelf').querySelectorAll('button')) {
             const rec = saved.find(r => r.id === b.dataset.id);
             b.onclick = () => load({ id: rec.id, key: rec.key }, { direct: true });
@@ -214,7 +202,7 @@ $('unlock').onclick = async () => {
         pwKey = await F.unlock(header, p.id, $('pw').value);
     } catch {
         $('lock-msg').textContent = t('lock.wrong');
-        $('lock-sheet').classList.remove('shake'); void $('lock-sheet').offsetWidth; $('lock-sheet').classList.add('shake');
+        shake($('lock-sheet'));
         return;
     }
     closeSheets();
@@ -227,7 +215,7 @@ async function keep() {
     const id = p.id;
     // Ask the browser not to clear saved voices when space runs low (granted silently or not at all).
     navigator.storage?.persist?.().catch(() => {});
-    await L.putPebbble({ id, key: p.key, pwKey, header: sealedHeader, title: header.name, cover: seed(), name: header.owner.name, count: header.tracks.length, savedAt: Date.now() });
+    await L.putPebbble({ id, key: p.key, pwKey, header: sealedHeader, title: header.name, cover: seed(), count: header.tracks.length, savedAt: Date.now() });
     // All voices, sleeping ones too, so a Christmas voice still wakes offline.
     const wanted = header.tracks.map(tr => `${id}/${tr.f}`);
     let done = 0;
@@ -302,11 +290,6 @@ audio.addEventListener('ended', () => {
 });
 audio.addEventListener('timeupdate', () => { checkSleep(); updateProgress(); });
 for (const ev of ['play', 'pause']) audio.addEventListener(ev, () => { updatePlayer(); renderVoices(); });
-// Voices added before lengths were recorded: show the length once it is known.
-audio.addEventListener('loadedmetadata', () => {
-    const tr = header?.tracks[PL.idx];
-    if (tr && !tr.duration && isFinite(audio.duration)) { tr.duration = Math.round(audio.duration); renderVoices(); }
-});
 
 function checkSleep() {
     if (PL.sleep > 0 && Date.now() >= PL.sleepAt) {
@@ -344,7 +327,7 @@ function updatePlayer() {
     const tr = header.tracks[PL.idx];
     const list = openIdx();
     $('pl-title').textContent = tr ? tr.title : header.name || '';
-    $('pl-sub').textContent = tr ? t('player.of', { name: header.name || header.owner.name || '', n: list.indexOf(PL.idx) + 1, total: list.length }).replace(/^ · /, '') : '';
+    $('pl-sub').textContent = tr ? t('player.of', { name: header.name || belongsTo(header), n: list.indexOf(PL.idx) + 1, total: list.length }).replace(/^ · /, '') : '';
     $('play').innerHTML = playing ? ICON.pause : ICON.play;
     $('play').setAttribute('aria-label', t(playing ? 'player.pause' : 'player.play'));
     $('mini-play').innerHTML = playing ? ICON.pauseSmall : ICON.playSmall;
@@ -492,7 +475,7 @@ async function setMediaSession() {
     const tr = header.tracks[PL.idx];
     let art = [];
     try { art = [{ src: await coverPng(seed()), sizes: '512x512', type: 'image/png' }]; } catch {}
-    navigator.mediaSession.metadata = new MediaMetadata({ title: tr.title, artist: header.owner.name || '', album: header.name || '', artwork: art });
+    navigator.mediaSession.metadata = new MediaMetadata({ title: tr.title, artist: header.from || '', album: header.name || '', artwork: art });
 }
 if ('mediaSession' in navigator) {
     const ms = navigator.mediaSession;
@@ -554,7 +537,7 @@ function isMine({ id, key }) {
 
 function openMenu() {
     $('menu-stone').innerHTML = stone(seed(), 'thumb');
-    $('menu-name').textContent = header.name || header.owner.name || '';
+    $('menu-name').textContent = header.name || belongsTo(header);
     $('m-edit').hidden = !isMine(p);
     $('m-edit').innerHTML = `${ICON.pen}<span><b>${t('menu.edit')}</b><span>${t('menu.editText')}</span></span>`;
     $('m-forget').hidden = !L.isOwned();
@@ -573,10 +556,10 @@ $('m-forget').onclick = async () => {
     const b = $('m-forget');
     if (!b.classList.contains('confirm')) {
         b.classList.add('confirm');
-        b.innerHTML = `${ICON.leaf}<span><b>${t('menu.forgetConfirm', { name: esc(header.name || header.owner.name || '') })}</b><span>${t('menu.forgetConfirmText')}</span></span>`;
+        b.innerHTML = `${ICON.leaf}<span><b>${t('menu.forgetConfirm', { name: esc(header.name || belongsTo(header)) })}</b><span>${t('menu.forgetConfirmText')}</span></span>`;
         return;
     }
-    const name = header.name || header.owner.name || '';
+    const name = header.name || belongsTo(header);
     stopPlayback();
     await L.forget(p.id);
     p = header = null;
@@ -624,48 +607,12 @@ $('clear').onclick = async () => {
     if (header) renderSheet();
 };
 
-// ---------- sheets & toast ----------
+// ---------- sheets ----------
+// The pebbble sheet stays open underneath; other sheets open over it with the scrim
+// between them. Tapping the scrim closes only the sheet on top.
 
-/**
- * The pebbble sheet stays open underneath; other sheets open over it with the scrim
- * between them. Tapping the scrim closes only the sheet on top.
- */
-function openSheet(id) {
-    const playerOn = $('player').classList.contains('on');
-    for (const sh of document.querySelectorAll('.sheet.on')) if (sh.id !== 'player' || id === 'player' || !playerOn) sh.classList.remove('on', 'over');
-    if (id === 'player') {
-        $('scrim').classList.remove('on');
-    } else {
-        $('scrim').classList.add('on');
-        $('scrim').classList.toggle('over', playerOn);
-        $(id).classList.toggle('over', playerOn);
-    }
-    $(id).classList.add('on');
-    if (id === 'settings-sheet') renderSettings();
-    renderMini();
-}
-function closeTop() {
-    const over = document.querySelector('.sheet.over.on');
-    if (!over) return closeSheets();
-    over.classList.remove('on', 'over');
-    $('scrim').classList.remove('on', 'over');
-    renderMini();
-}
-function closeSheets() {
-    for (const sh of document.querySelectorAll('.sheet')) sh.classList.remove('on', 'over');
-    $('sleep-choices').hidden = true;
-    $('scrim').classList.remove('on', 'over');
-    renderMini();
-}
-$('scrim').onclick = closeTop;
-
-let toastTimer;
-function toast(msg) {
-    $('toast').textContent = msg;
-    $('toast').classList.add('on');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => $('toast').classList.remove('on'), 2600);
-}
+function openSheet(id) { sheets.open(id); }
+function closeSheets() { sheets.closeAll(); }
 
 // ---------- start ----------
 

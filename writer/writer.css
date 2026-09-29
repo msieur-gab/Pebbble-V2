@@ -1,0 +1,107 @@
+/* Pebbble writer: setup, the editor, writing to the stone. Shared parts live in shared/ui.css. */
+
+.app { padding-bottom: calc(128px + env(safe-area-inset-bottom)); }
+
+/* welcome and key phrase */
+.welcome { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 48px 0 32px; }
+.welcome .stone { width: 120px; margin: 0 0 32px; }
+.welcome .eyebrow { margin: 0; }
+.welcome h1 { font-size: 2.1rem; line-height: 1.15; margin: 10px 0 12px; text-wrap: balance; }
+.welcome p.lead { color: var(--soft); margin: 0 0 32px; max-width: 34ch; }
+.welcome.center { text-align: center; align-items: center; }
+.welcome.center .stone { margin: 0 auto 24px; width: 140px; }
+.welcome.center form { width: 100%; }
+
+/* guided setup */
+.steps { list-style: none; margin: 0 0 20px; padding: 0; counter-reset: s; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 28px 1fr; gap: 10px; padding: 16px 0 4px; border-top: 1px solid var(--line); }
+.steps li::before { content: counter(s); font-family: var(--serif); font-size: 1.1rem; color: var(--faint); }
+.steps li.done::before { content: "✓"; color: var(--accent); }
+.steps li > div { min-width: 0; }
+.steps b { display: block; font-weight: 600; margin-bottom: 4px; }
+.steps .note { margin-bottom: 12px; }
+.code { margin: 0 0 6px; padding: 12px 14px; border-radius: 12px; background: var(--bg); font: .78rem/1.5 var(--mono); white-space: pre-wrap; word-break: break-all; }
+#share-code { margin-bottom: 16px; }
+.steps .link { margin-bottom: 14px; }
+
+/* my pebbbles */
+.shelf .new { display: flex; flex-direction: column; align-items: center; }
+.shelf .new i { display: grid; place-items: center; width: 78%; aspect-ratio: 1.15; margin: 0 auto 12px; border: 1.5px dashed var(--faint); border-radius: 46% 54% 50% 50% / 55% 45% 55% 45%; color: var(--soft); font-style: normal; font-size: 2rem; font-family: var(--serif); }
+.tap-hint { display: flex; align-items: center; gap: 14px; width: 100%; margin: 36px 0 0; padding: 16px 18px; border-radius: 16px; background: var(--paper); font-size: .9rem; color: var(--soft); text-align: left; }
+.tap-hint.listening { color: var(--ink); }
+.mini-rings { position: relative; width: 34px; height: 34px; flex: 0 0 34px; }
+.mini-rings i { position: absolute; inset: 0; border: 1px solid var(--soft); border-radius: 50%; opacity: 0; animation: ring 3s var(--ease) infinite; }
+.mini-rings i:nth-child(2) { animation-delay: 1.5s; }
+.mini-rings b { position: absolute; inset: 34%; background: var(--ink); border-radius: 46% 54% 50% 50% / 55% 45% 55% 45%; }
+.paste-link { display: block; margin: 14px auto 0; }
+.status { text-align: center; color: var(--soft); font-size: .9rem; padding: 40vh 24px 0; }
+
+/* editor */
+.ed-head { text-align: center; padding: 4px 0 8px; }
+.ed-head .stone { width: min(46vw, 180px); margin: 0 auto; }
+.reroll { margin: 10px auto 0; display: inline-flex; gap: 6px; align-items: center; font-size: .85rem; color: var(--soft); padding: 6px 12px; border-radius: 999px; }
+.reroll .icon { width: 16px; height: 16px; }
+.name-in { display: block; width: 100%; border: 0; border-bottom: 1px solid transparent; background: transparent; text-align: center; font: 400 1.9rem/1.2 var(--serif); letter-spacing: -.01em; color: var(--ink); padding: 14px 0 4px; }
+.name-in::placeholder { color: var(--faint); }
+.name-in:focus { outline: none; border-bottom-color: var(--line); }
+.dedic { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0 0; }
+.dedic label { display: flex; align-items: baseline; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--field); min-width: 0; }
+.dedic label:focus-within { border-color: var(--ink); }
+.dedic label span { font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--soft); flex: none; }
+.dedic input { border: 0; background: transparent; font: inherit; color: var(--ink); width: 100%; min-width: 0; padding: 0; }
+.dedic input:focus { outline: none; }
+.dedic input::placeholder { color: var(--faint); }
+
+.preview { margin: 18px 0 0; padding: 18px; border-radius: 18px; background: var(--paper); display: grid; grid-template-columns: 64px 1fr; gap: 6px 16px; align-items: center; }
+.preview .cap { grid-column: 1 / -1; margin: 0 0 6px; }
+.preview .stone { width: 64px; }
+.preview .pv-name { font-family: var(--serif); font-size: 1.2rem; line-height: 1.2; }
+.preview .pv-ded { font-family: var(--serif); font-style: italic; color: var(--soft); font-size: .98rem; margin-top: 2px; }
+.preview .pv-count { font-size: .8rem; color: var(--faint); margin-top: 4px; }
+
+.section { margin: 34px 0 0; }
+.section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 0 0 6px; }
+.section-head h2 { font-family: var(--serif); font-weight: 400; font-size: 1.35rem; margin: 0; }
+.section-head span { font-size: .85rem; color: var(--faint); }
+.section .voices { margin: 0; }
+.voice .badge { margin-left: 8px; font-style: normal; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); padding: 2px 7px; border-radius: 999px; vertical-align: 2px; }
+.add-voice { display: flex; align-items: center; gap: 12px; width: 100%; padding: 16px 4px; color: var(--accent); font-weight: 600; }
+.add-voice i { display: grid; place-items: center; width: 22px; font-style: normal; font-size: 1.3rem; }
+
+.dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 14px 24px calc(16px + env(safe-area-inset-bottom)); background: linear-gradient(to top, var(--bg) 70%, rgba(236, 235, 231, 0)); }
+.dock > div { max-width: 392px; margin: 0 auto; }
+
+/* voice sheet */
+.rec { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 0 22px; }
+.rec-btn { position: relative; width: 96px; height: 96px; border-radius: 50%; border: 1.5px solid var(--ink); display: grid; place-items: center; }
+.rec-btn b { width: 60px; height: 60px; border-radius: 50%; background: var(--warn); transition: all .3s var(--ease); }
+.rec-btn.on b { width: 34px; height: 34px; border-radius: 8px; }
+.rec-btn.on::after { content: ""; position: absolute; inset: -10px; border-radius: 50%; border: 1px solid var(--warn); animation: ring 1.8s var(--ease) infinite; }
+.rec-time { font-variant-numeric: tabular-nums; font-size: 1.1rem; }
+.rec-or { font-size: .85rem; color: var(--soft); text-align: center; }
+.when { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 14px; }
+.when button { padding: 12px 6px; border-radius: 14px; border: 1px solid var(--line); font-size: .88rem; line-height: 1.25; }
+.when button.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.daymonth { display: grid; grid-template-columns: 5.5em 1fr; gap: 10px; }
+#v-remove, #pw-remove { display: block; margin: 10px auto 0; }
+
+/* if found */
+.finder { margin: 4px 0 20px; padding: 16px; border-radius: 16px; background: var(--bg); text-align: center; font-size: .88rem; color: var(--soft); line-height: 1.55; }
+.finder b { color: var(--ink); font-weight: 600; }
+
+/* write to the stone */
+.write { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 0 32px; }
+.write .rings { width: 220px; height: 220px; margin-bottom: 32px; }
+.write .rings .stone { position: absolute; inset: 28%; }
+.write h1 { font-size: 1.8rem; line-height: 1.2; margin: 0 0 8px; text-wrap: balance; }
+.write p { color: var(--soft); margin: 0 0 32px; max-width: 30ch; }
+.write .actions { width: 100%; max-width: 320px; display: grid; gap: 10px; }
+.check { width: 64px; height: 64px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; margin: 0 auto 20px; }
+.check .icon { width: 30px; height: 30px; stroke-width: 2; }
+.lock-card { margin: 28px 0 0; width: 100%; max-width: 320px; text-align: left; padding: 16px 18px; border-radius: 16px; border: 1px solid var(--line); }
+.lock-card b { display: block; font-weight: 600; }
+.lock-card span { display: block; font-size: .88rem; color: var(--soft); margin: 2px 0 10px; }
+.lock-card.confirm { background: var(--warn-soft); border-color: transparent; }
+.lock-card.confirm b { color: var(--warn); }
+.lock-card .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.lock-card .two .primary, .lock-card .two .ghost { padding: 12px; }

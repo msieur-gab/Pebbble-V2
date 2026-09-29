@@ -10,16 +10,11 @@
     "write": "Si tu l’as trouvé, écris à {contact}."
   },
   "page": {
-    "meta": "{name} · {count} voix",
-    "meta_one": "{name} · 1 voix",
     "foot": "Appartient à {name}",
-    "footContact": "si trouvé, {contact}",
-    "myPebbbles": "Mes pebbbles"
+    "footContact": "si trouvé, {contact}"
   },
   "voice": {
-    "wakes": "Se réveille le {date}",
-    "until": "Jusqu’au {date}",
-    "quiet": "S’est tue"
+    "wakes": "Se réveille le {date}"
   },
   "device": {
     "title": "Est-ce ton téléphone ?",
@@ -107,5 +102,227 @@
     "add": "Ajouter à l’écran d’accueil",
     "later": "Plus tard",
     "ios": "Touche Partager, puis « Sur l’écran d’accueil »."
+  },
+  "pebbble": {
+    "forFrom": "pour {for} · de {from}",
+    "for": "pour {for}",
+    "from": "de {from}"
+  },
+  "writer": {
+    "title": "Atelier",
+    "edit": "Modifier",
+    "untitled": "Sans titre",
+    "done": "Terminé",
+    "copy": "Copier",
+    "copied": "Copié",
+    "copyFailed": "Copie impossible. Sélectionne le texte et copie-le à la main.",
+    "opening": "Ouverture du pebbble…",
+    "notFound": "Aucun pebbble à ce lien.",
+    "wrongLink": "Ce lien n’ouvre pas ce pebbble.",
+    "offline": "Le stockage est injoignable. Vérifie la connexion.",
+    "welcome": {
+      "eyebrow": "Atelier Pebbble",
+      "title": "Où vivront les voix ?",
+      "lead": "Les pebbbles gardent leurs voix, chiffrées, dans ton propre stockage. Connecte-le une fois sur cet appareil.",
+      "paste": "Coller un code de configuration",
+      "pasteText": "Créé sur un appareil où l’atelier est déjà configuré.",
+      "guide": "Configurer mon stockage",
+      "guideText": "Un pas-à-pas dans Cloudflare, environ 10 minutes."
+    },
+    "guide": {
+      "title": "Configurer ton stockage",
+      "lead": "Cloudflare R2 garde les voix chiffrées. L’offre gratuite suffit largement. Ouvre dash.cloudflare.com dans un autre onglet.",
+      "s1": "Créer un bucket",
+      "s1Text": "R2 → Create bucket. N’importe quel nom convient.",
+      "bucket": "Nom du bucket",
+      "s2": "Permettre aux pierres de le lire",
+      "s2Text": "Dans le bucket : Settings → Public access → autorise l’adresse r2.dev, puis colle-la ici. Les fichiers restent chiffrés : public veut seulement dire qu’une pierre peut les récupérer.",
+      "public": "Adresse publique",
+      "cors": "Dans les mêmes réglages, sous CORS policy, colle cette règle pour que les applis puissent lire et enregistrer :",
+      "s3": "Donner une clé à cet appareil",
+      "s3Text": "R2 → Manage API tokens → Create token, avec Object Read & Write sur ce bucket seulement. Colle ce que Cloudflare affiche.",
+      "endpoint": "Adresse S3 (…r2.cloudflarestorage.com)",
+      "keyId": "Access key ID",
+      "secret": "Secret access key",
+      "connect": "Connecter",
+      "checking": "Vérification…",
+      "missing": "Remplis d’abord chaque étape.",
+      "badKey": "Cloudflare a refusé la clé. Vérifie l’adresse S3, l’access key et le secret.",
+      "badPublic": "L’enregistrement marche, mais l’adresse publique ne montre pas le bucket. Vérifie l’étape 2 et sa règle CORS.",
+      "connected": "Stockage connecté"
+    },
+    "paste": {
+      "title": "Coller un code de configuration",
+      "lead": "Sur l’appareil déjà configuré : Réglages → Configurer un autre appareil. Copie le code, envoie-le-toi et colle-le ici.",
+      "go": "Continuer",
+      "bad": "Ce n’est pas un code de configuration. Il commence par « pebbble-setup: »."
+    },
+    "key": {
+      "eyebrow": "Presque fini",
+      "title": "Choisis une phrase-clé",
+      "titleJoin": "Ta phrase-clé",
+      "lead": "Elle ouvre la liste de tes pebbbles sur chaque appareil configuré. Utilise la même partout. Elle n’est jamais enregistrée ni envoyée.",
+      "leadJoin": "Celle choisie sur ton autre appareil. Elle ouvre le code de configuration et la liste de tes pebbbles.",
+      "placeholder": "Quatre ou cinq mots dont tu te souviendras",
+      "lose": "Si tu la perds, la liste est perdue, mais les pierres continuent de marcher : tu peux rouvrir chacune en l’approchant du téléphone.",
+      "go": "Ouvrir mes pebbbles",
+      "opening": "Ouverture…",
+      "short": "Utilise au moins trois mots.",
+      "wrong": "Cette phrase-clé n’ouvre pas ce code."
+    },
+    "library": {
+      "new": "Nouveau pebbble",
+      "tap": "Approche une pierre du dos du téléphone pour l’ouvrir ici.",
+      "listening": "À l’écoute… approche la pierre du dos du téléphone.",
+      "noNfc": "Les pierres s’ouvrent ici avec Chrome sur Android. Sur cet appareil, colle le lien d’un pebbble.",
+      "pasteLink": "Ouvrir un pebbble par son lien",
+      "notPebbble": "Ce tag ne contient pas de pebbble.",
+      "cannotScan": "Lecture impossible. Autorise le NFC pour ce site et réessaie."
+    },
+    "link": {
+      "title": "Ouvrir par lien",
+      "lead": "Colle le lien écrit sur la pierre.",
+      "go": "Ouvrir",
+      "bad": "Ce n’est pas un lien de pebbble."
+    },
+    "unlock": {
+      "lead": "Ses voix sont fermées. L’indice dit :",
+      "leadNoHint": "Ses voix sont fermées.",
+      "go": "Ouvrir pour modifier"
+    },
+    "editor": {
+      "anotherStone": "Une autre pierre",
+      "name": "Nom du pebbble",
+      "namePlaceholder": "Nomme ce pebbble",
+      "from": "De",
+      "for": "Pour",
+      "fromPlaceholder": "Toi",
+      "optional": "Facultatif",
+      "preview": "Ce qu’on voit en touchant la pierre",
+      "noVoices": "Pas encore de voix",
+      "voices": "Voix",
+      "new": "nouveau",
+      "addVoice": "Enregistrer ou ajouter une voix",
+      "safe": "Le protéger",
+      "pwOff": "Aucun. Tenir la pierre suffit.",
+      "pwOn": "Protégé, sans indice",
+      "pwHint": "Indice : {hint}",
+      "addContact": "Ajouter un contact",
+      "writeAgain": "Écrire sur une autre pierre",
+      "writeAgainText": "Les mêmes voix, une deuxième pierre.",
+      "delete": "Supprimer ce pebbble",
+      "deleteText": "La pierre ne jouera plus rien.",
+      "deleteConfirm": "Touche encore pour supprimer « {name} »",
+      "deleted": "« {name} » supprimé"
+    },
+    "voice": {
+      "newVoice": "Une nouvelle voix",
+      "thisVoice": "Cette voix",
+      "record": "Enregistrer",
+      "or": "ou",
+      "chooseFile": "choisir un fichier audio",
+      "otherFile": "un autre fichier",
+      "recorded": "Enregistré",
+      "listen": "écouter",
+      "tapToStop": "Touche pour arrêter",
+      "title": "Titre",
+      "titlePlaceholder": "Bonne nuit, ma puce",
+      "when": "Quand peut-on l’entendre ?",
+      "always": "Toujours",
+      "fromDate": "À partir d’une date",
+      "yearly": "Chaque année",
+      "wakesOnLabel": "Se réveille le",
+      "yearFrom": "Chaque année du",
+      "yearUntil": "au",
+      "alwaysNote": "Tous ceux qui touchent la pierre peuvent l’entendre.",
+      "fromNote": "Elle dort jusqu’à ce jour-là, puis reste éveillée pour de bon.",
+      "yearlyNote": "Elle se réveille chaque année pour ces jours-là, puis se rendort.",
+      "wakesOn": "Se réveille le {date}",
+      "everyYear": "Chaque année, du {from} au {to}",
+      "everyYearOn": "Chaque année le {date}",
+      "add": "Ajouter cette voix",
+      "keep": "Garder les changements",
+      "remove": "Retirer cette voix",
+      "removeConfirm": "Touche encore pour la retirer",
+      "needAudio": "Enregistre une voix ou choisis d’abord un fichier.",
+      "needTitle": "Donne-lui un titre.",
+      "noMic": "Le micro n’est pas disponible. Autorise-le pour ce site, ou choisis un fichier.",
+      "badFile": "Ce fichier ne peut pas être lu. Essaie-en un autre."
+    },
+    "pw": {
+      "title": "Mot de passe",
+      "lead": "Facultatif. Sans lui, tenir la pierre suffit pour écouter.",
+      "password": "Mot de passe",
+      "newPassword": "Nouveau mot de passe",
+      "placeholder": "Un mot qu’ils connaissent",
+      "keepEmpty": "Laisse vide pour garder l’actuel",
+      "forgiving": "Majuscules, espaces en trop et accents ne comptent pas (é = e). Chiffres et symboles doivent correspondre.",
+      "hint": "Indice, visible par tous",
+      "hintPlaceholder": "Ce qu’on lance dans la rivière",
+      "keep": "Garder ce mot de passe",
+      "remove": "Retirer le mot de passe",
+      "empty": "Tape d’abord un mot de passe."
+    },
+    "found": {
+      "title": "Si quelqu’un le trouve",
+      "lead": "Tous ceux qui touchent la pierre voient ceci, même sans le mot de passe.",
+      "contact": "Contact",
+      "contactPlaceholder": "Un e-mail ou un numéro",
+      "theyRead": "Ils liront",
+      "nothing": "Rien pour l’instant. Sans contact, une pierre perdue ne peut pas revenir."
+    },
+    "save": {
+      "andWrite": "Enregistrer et écrire sur une pierre",
+      "save": "Enregistrer",
+      "changes": "Enregistrer les changements",
+      "needVoice": "Ajoute d’abord une voix.",
+      "locking": "Verrouillage des voix…",
+      "uploading": "Envoi de la voix {n} sur {total}…",
+      "saving": "Enregistrement…",
+      "saved": "Enregistré. La pierre joue la nouvelle version.",
+      "savedWriteLater": "Enregistré. Ouvre-le sur ton téléphone pour l’écrire sur une pierre.",
+      "failed": "Enregistrement impossible. Vérifie la connexion et réessaie."
+    },
+    "write": {
+      "bar": "Écrire",
+      "cancel": "Annuler",
+      "title": "Approche la pierre du dos de ton téléphone",
+      "text": "Garde-la immobile jusqu’à ce que le téléphone vibre. Ça prend une seconde.",
+      "failed": "La pierre n’a pas pu être écrite. Garde-la immobile, un peu plus haut sur le téléphone.",
+      "retry": "Réessayer"
+    },
+    "written": {
+      "title": "« {name} » est dans la pierre",
+      "text": "Touche-la avec n’importe quel téléphone pour écouter.",
+      "listen": "Écouter maintenant",
+      "copy": "Copier son lien",
+      "back": "Retour à mes pebbbles"
+    },
+    "lock": {
+      "title": "Verrouiller le tag",
+      "text": "Empêche quiconque de réécrire l’adresse de la pierre. À faire seulement quand cette adresse est définitive.",
+      "ask": "Verrouiller ce tag…",
+      "confirmTitle": "Verrouiller ce tag pour de bon ?",
+      "confirmText": "Aucun téléphone ne pourra plus le réécrire, pas même le tien. Les voix peuvent toujours être ajoutées et modifiées. C’est irréversible.",
+      "no": "Pas maintenant",
+      "yes": "Verrouiller",
+      "hold": "Approche de nouveau la pierre du téléphone…",
+      "done": "Tag verrouillé",
+      "doneText": "La pierre garde cette adresse pour de bon.",
+      "failed": "Le tag n’a pas pu être verrouillé."
+    },
+    "settings": {
+      "storage": "Stockage",
+      "connected": "Connecté",
+      "bucket": "Bucket « {bucket} »",
+      "share": "Configurer un autre appareil",
+      "shareText": "Un code à coller là-bas, ouvert par ta phrase-clé.",
+      "disconnect": "Déconnecter cet appareil",
+      "disconnectConfirm": "Touche encore pour déconnecter. Les pierres continuent de marcher."
+    },
+    "share": {
+      "title": "Configurer un autre appareil",
+      "lead": "Sur l’autre appareil, choisis « Coller un code de configuration », colle ceci, puis tape ta phrase-clé. Sans elle, le code n’ouvre rien."
+    }
   }
 }

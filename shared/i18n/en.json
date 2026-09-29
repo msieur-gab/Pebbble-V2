@@ -10,16 +10,11 @@
     "write": "If you found it, please write to {contact}."
   },
   "page": {
-    "meta": "{name} · {count} voices",
-    "meta_one": "{name} · 1 voice",
     "foot": "Belongs to {name}",
-    "footContact": "if found, {contact}",
-    "myPebbbles": "My pebbbles"
+    "footContact": "if found, {contact}"
   },
   "voice": {
-    "wakes": "Wakes on {date}",
-    "until": "Until {date}",
-    "quiet": "Has gone quiet"
+    "wakes": "Wakes on {date}"
   },
   "device": {
     "title": "Is this your phone?",
@@ -107,5 +102,227 @@
     "add": "Add to home screen",
     "later": "Not now",
     "ios": "Tap Share, then “Add to Home Screen”."
+  },
+  "pebbble": {
+    "forFrom": "for {for} · from {from}",
+    "for": "for {for}",
+    "from": "from {from}"
+  },
+  "writer": {
+    "title": "Writer",
+    "edit": "Edit",
+    "untitled": "Untitled",
+    "done": "Done",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyFailed": "Could not copy. Select the text and copy it by hand.",
+    "opening": "Opening the pebbble…",
+    "notFound": "No pebbble found at this link.",
+    "wrongLink": "This link does not open that pebbble.",
+    "offline": "Could not reach the storage. Check the connection.",
+    "welcome": {
+      "eyebrow": "Pebbble writer",
+      "title": "Where should the voices live?",
+      "lead": "Pebbbles keep their voices, encrypted, in your own storage. Connect it once on this device.",
+      "paste": "Paste a setup code",
+      "pasteText": "Made on a device where the writer is already set up.",
+      "guide": "Set up my storage",
+      "guideText": "A guided walk through Cloudflare, about 10 minutes."
+    },
+    "guide": {
+      "title": "Set up your storage",
+      "lead": "Cloudflare R2 keeps the encrypted voices. The free tier is plenty. Open dash.cloudflare.com in another tab.",
+      "s1": "Create a bucket",
+      "s1Text": "R2 → Create bucket. Any name works.",
+      "bucket": "Bucket name",
+      "s2": "Let stones read it",
+      "s2Text": "In the bucket: Settings → Public access → allow the r2.dev address, then paste it here. The files stay encrypted: public only means a stone can fetch them.",
+      "public": "Public address",
+      "cors": "In the same settings, under CORS policy, paste this rule so the apps may read and save:",
+      "s3": "Give this device a key",
+      "s3Text": "R2 → Manage API tokens → Create token, with Object Read & Write on this bucket only. Paste what Cloudflare shows.",
+      "endpoint": "S3 address (…r2.cloudflarestorage.com)",
+      "keyId": "Access key ID",
+      "secret": "Secret access key",
+      "connect": "Connect",
+      "checking": "Checking…",
+      "missing": "Fill in every step first.",
+      "badKey": "Cloudflare refused the key. Check the S3 address, the access key and the secret.",
+      "badPublic": "Saving works, but the public address doesn't show the bucket. Check step 2 and its CORS rule.",
+      "connected": "Storage connected"
+    },
+    "paste": {
+      "title": "Paste a setup code",
+      "lead": "On the device that is already set up: Settings → Set up another device. Copy the code, send it to yourself, and paste it here.",
+      "go": "Continue",
+      "bad": "That is not a setup code. It starts with “pebbble-setup:”."
+    },
+    "key": {
+      "eyebrow": "Almost there",
+      "title": "Choose a key phrase",
+      "titleJoin": "Your key phrase",
+      "lead": "It opens your list of pebbbles on every device you set up. Use the same phrase everywhere. It is never saved or sent.",
+      "leadJoin": "The one you chose on your other device. It opens the setup code and your list of pebbbles.",
+      "placeholder": "Four or five words you'll remember",
+      "lose": "Lose it and the list is gone, but the stones keep working: you can reopen each one by holding it to the phone.",
+      "go": "Open my pebbbles",
+      "opening": "Opening…",
+      "short": "Use at least three words.",
+      "wrong": "This key phrase doesn't open that code."
+    },
+    "library": {
+      "new": "New pebbble",
+      "tap": "Hold a stone to the back of the phone to open it here.",
+      "listening": "Listening… hold the stone to the back of the phone.",
+      "noNfc": "Stones can be opened here with Chrome on Android. On this device, paste a pebbble's link.",
+      "pasteLink": "Open a pebbble by its link",
+      "notPebbble": "This tag holds no pebbble.",
+      "cannotScan": "Could not read stones. Allow NFC for this site and try again."
+    },
+    "link": {
+      "title": "Open by link",
+      "lead": "Paste the link written on the stone.",
+      "go": "Open",
+      "bad": "That is not a pebbble link."
+    },
+    "unlock": {
+      "lead": "Its voices are locked. The hint says:",
+      "leadNoHint": "Its voices are locked.",
+      "go": "Open to edit"
+    },
+    "editor": {
+      "anotherStone": "Another stone",
+      "name": "Pebbble name",
+      "namePlaceholder": "Name this pebbble",
+      "from": "From",
+      "for": "For",
+      "fromPlaceholder": "You",
+      "optional": "Optional",
+      "preview": "What people see when they tap",
+      "noVoices": "No voices yet",
+      "voices": "Voices",
+      "new": "new",
+      "addVoice": "Record or add a voice",
+      "safe": "Keeping it safe",
+      "pwOff": "None. Holding the stone is enough.",
+      "pwOn": "Protected, no hint",
+      "pwHint": "Hint: {hint}",
+      "addContact": "Add a contact",
+      "writeAgain": "Write to another stone",
+      "writeAgainText": "Same voices, a second stone.",
+      "delete": "Delete this pebbble",
+      "deleteText": "The stone will play nothing.",
+      "deleteConfirm": "Tap again to delete “{name}”",
+      "deleted": "“{name}” deleted"
+    },
+    "voice": {
+      "newVoice": "A new voice",
+      "thisVoice": "This voice",
+      "record": "Record",
+      "or": "or",
+      "chooseFile": "choose an audio file",
+      "otherFile": "another file",
+      "recorded": "Recorded",
+      "listen": "listen",
+      "tapToStop": "Tap to stop",
+      "title": "Title",
+      "titlePlaceholder": "Good night, little one",
+      "when": "When can it be heard?",
+      "always": "Always",
+      "fromDate": "From a date",
+      "yearly": "Every year",
+      "wakesOnLabel": "Wakes on",
+      "yearFrom": "Every year from",
+      "yearUntil": "until",
+      "alwaysNote": "Anyone who taps the stone can hear it.",
+      "fromNote": "It sleeps until that day, then stays awake for good.",
+      "yearlyNote": "It wakes every year for those days, then sleeps again.",
+      "wakesOn": "Wakes on {date}",
+      "everyYear": "Every year, {from} to {to}",
+      "everyYearOn": "Every year on {date}",
+      "add": "Add this voice",
+      "keep": "Keep changes",
+      "remove": "Remove this voice",
+      "removeConfirm": "Tap again to remove it",
+      "needAudio": "Record a voice or choose a file first.",
+      "needTitle": "Give it a title.",
+      "noMic": "The microphone is not available. Allow it for this site, or choose a file.",
+      "badFile": "This file can't be played. Try another one."
+    },
+    "pw": {
+      "title": "Password",
+      "lead": "Optional. Without it, holding the stone is enough to listen.",
+      "password": "Password",
+      "newPassword": "New password",
+      "placeholder": "A word they know",
+      "keepEmpty": "Leave empty to keep the current one",
+      "forgiving": "Capitals, extra spaces and accents don't matter (é = e). Digits and symbols must match.",
+      "hint": "Hint, shown to everyone",
+      "hintPlaceholder": "What you throw in the river",
+      "keep": "Keep this password",
+      "remove": "Remove the password",
+      "empty": "Type a password first."
+    },
+    "found": {
+      "title": "If someone finds it",
+      "lead": "Anyone who taps the stone sees this, even without the password.",
+      "contact": "Contact",
+      "contactPlaceholder": "An email or a phone number",
+      "theyRead": "They will read",
+      "nothing": "Nothing yet. Without a contact, a lost stone can't find its way back."
+    },
+    "save": {
+      "andWrite": "Save and write to a stone",
+      "save": "Save",
+      "changes": "Save changes",
+      "needVoice": "Add a voice first.",
+      "locking": "Locking the voices…",
+      "uploading": "Uploading voice {n} of {total}…",
+      "saving": "Saving…",
+      "saved": "Saved. The stone plays the new version.",
+      "savedWriteLater": "Saved. Open it on your phone to write it to a stone.",
+      "failed": "Could not save. Check the connection and try again."
+    },
+    "write": {
+      "bar": "Write",
+      "cancel": "Cancel",
+      "title": "Hold the stone to the back of your phone",
+      "text": "Keep it still until the phone buzzes. It takes a second.",
+      "failed": "The stone could not be written. Hold it still, a little higher on the phone.",
+      "retry": "Try again"
+    },
+    "written": {
+      "title": "“{name}” is in the stone",
+      "text": "Tap it with any phone to listen.",
+      "listen": "Listen now",
+      "copy": "Copy its link",
+      "back": "Back to my pebbbles"
+    },
+    "lock": {
+      "title": "Lock the tag",
+      "text": "Stops anyone from rewriting what the stone points to. Do this only once its address is final.",
+      "ask": "Lock this tag…",
+      "confirmTitle": "Lock this tag for good?",
+      "confirmText": "No phone will ever rewrite it, including yours. Voices can still be added and changed. This can't be undone.",
+      "no": "Not now",
+      "yes": "Lock it",
+      "hold": "Hold the stone to the phone again…",
+      "done": "Tag locked",
+      "doneText": "The stone keeps this address for good.",
+      "failed": "The tag could not be locked."
+    },
+    "settings": {
+      "storage": "Storage",
+      "connected": "Connected",
+      "bucket": "Bucket “{bucket}”",
+      "share": "Set up another device",
+      "shareText": "A code to paste there, opened by your key phrase.",
+      "disconnect": "Disconnect this device",
+      "disconnectConfirm": "Tap again to disconnect. Stones keep working."
+    },
+    "share": {
+      "title": "Set up another device",
+      "lead": "On the other device, choose “Paste a setup code”, paste this, then type your key phrase. Without the key phrase the code opens nothing."
+    }
   }
 }

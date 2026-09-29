@@ -1,117 +1,177 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="light">
-    <title>Pebbble Writer</title>
-    <link rel="stylesheet" href="../shared/base.css">
-    <link rel="icon" href="../player/icons/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="../player/icons/apple-touch-icon.png">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#ecebe7">
+<title>Pebbble Writer</title>
+<link rel="icon" href="../player/icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../player/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="../shared/ui.css">
+<link rel="stylesheet" href="writer.css">
 </head>
 <body>
-<main>
-    <h1>Pebbble Writer</h1>
 
-    <details id="settings">
-        <summary>Storage settings</summary>
-        <form autocomplete="off" onsubmit="return false">
-        <p class="muted">Kept on this device only. Create them in Cloudflare → R2 → Manage API tokens (Object Read &amp; Write, this bucket only).</p>
-        <label>Account ID <input name="accountId" autocomplete="off"></label>
-        <label>Access key ID <input name="accessKeyId" autocomplete="off"></label>
-        <label>Secret access key <input name="secretAccessKey" type="password" autocomplete="new-password" data-lpignore="true"></label>
-        <label>Bucket <input name="bucket" autocomplete="off"></label>
-        <label>Public bucket URL <input name="publicBase" autocomplete="off" placeholder="https://pub-….r2.dev"></label>
-        <label>Library passphrase <input id="lib-pass" type="password" autocomplete="new-password" data-lpignore="true" placeholder="Unchanged"></label>
-        <p class="muted">Keeps the list of your pebbbles, encrypted in your bucket. Use the same passphrase on every device. It is not stored; only keys derived from it are.</p>
-        <button type="button" id="save-settings">Save settings</button>
-        </form>
-    </details>
+<!-- Views are drawn into #app by writer.js: welcome, key phrase, my pebbbles, editor, write, written, unlock. -->
+<div class="app" id="app"></div>
+<div class="dock" id="dock" hidden><div><button type="button" class="primary" id="dock-btn"></button></div></div>
+<div class="scrim" id="scrim"></div>
 
-    <section id="start">
-        <h2>My pebbbles</h2>
-        <div id="mine-list"></div>
-        <p id="mine-msg" class="muted"></p>
-        <button type="button" id="new">New pebbble</button>
-        <button type="button" id="scan" class="quiet">Open a pebbble by tapping it</button>
-        <label>…or paste its link <input id="link" autocomplete="off" placeholder="https://…#id.key"></label>
-        <button type="button" id="open-link" class="quiet">Open link</button>
-        <p id="start-msg" class="muted"></p>
-    </section>
-
-    <section id="editor" hidden>
-        <button type="button" class="quiet back" style="width: auto; margin: 0 0 8px;">← My pebbbles</button>
-        <h2 id="editor-title">New pebbble</h2>
-
-        <form id="unlock" autocomplete="off" onsubmit="return false" hidden>
-            <p>This pebbble has a password. Hint: <em id="unlock-hint"></em></p>
-            <label>Password <input id="unlock-pw" type="password" autocomplete="off" data-lpignore="true"></label>
-            <button type="button" id="unlock-btn">Unlock to edit</button>
-        </form>
-
-        <form id="fields" autocomplete="off" onsubmit="return false">
-            <div id="w-cover" class="cover" style="width: 180px; margin: 0 auto;"></div>
-            <button type="button" id="w-reroll" class="quiet" style="width: auto; display: block; margin: 8px auto 0;">Another stone</button>
-            <label>Pebbble name <input id="p-name" name="pebbble-title" autocomplete="off" placeholder="Like an album title"></label>
-            <label>Owner name <input id="owner-name" name="pebbble-owner" autocomplete="off" placeholder="This pebbble belongs to…"></label>
-            <label>Owner contact <input id="owner-contact" name="pebbble-contact" autocomplete="off" placeholder="If found, contact…"></label>
-
-            <div id="pw-new">
-                <label>Password (optional) <input id="pw" type="password" autocomplete="new-password" data-lpignore="true"></label>
-                <p class="muted" style="margin:4px 0 0">Capitals, extra spaces and accents don't matter when opening (é = e, ñ = n). Symbols and digits must match.</p>
-                <label>Hint shown to everyone <input id="hint" autocomplete="off"></label>
+<!-- Guided storage setup. Fields sit in a form so Chrome's password manager leaves them alone. -->
+<form class="sheet" id="guide-sheet" autocomplete="off" onsubmit="return false" role="dialog" aria-labelledby="guide-title">
+    <div class="handle"></div>
+    <h2 id="guide-title" data-i18n="writer.guide.title"></h2>
+    <p class="lead" data-i18n="writer.guide.lead"></p>
+    <ol class="steps">
+        <li id="step-1">
+            <div>
+                <b data-i18n="writer.guide.s1"></b>
+                <p class="note" data-i18n="writer.guide.s1Text"></p>
+                <label class="cap" for="g-bucket" data-i18n="writer.guide.bucket"></label>
+                <input class="field" id="g-bucket" value="pebbble" autocomplete="off" data-lpignore="true">
             </div>
-            <div id="pw-set" hidden>
-                <p class="muted" id="pw-state">Password protected.</p>
-                <div id="pw-edit">
-                    <label>Hint shown to everyone <input id="hint-edit" autocomplete="off"></label>
-                    <label>New password (leave empty to keep the current one) <input id="pw-change" type="password" autocomplete="new-password" data-lpignore="true"></label>
-                </div>
-                <button type="button" id="pw-remove" class="quiet">Remove password</button>
+        </li>
+        <li id="step-2">
+            <div>
+                <b data-i18n="writer.guide.s2"></b>
+                <p class="note" data-i18n="writer.guide.s2Text"></p>
+                <label class="cap" for="g-public" data-i18n="writer.guide.public"></label>
+                <input class="field mono" id="g-public" placeholder="https://pub-….r2.dev" autocomplete="off" data-lpignore="true">
+                <p class="note" data-i18n="writer.guide.cors"></p>
+                <pre class="code" id="g-cors"></pre>
+                <button type="button" class="link" id="g-cors-copy" data-i18n="writer.copy"></button>
             </div>
-
-            <h2>Messages</h2>
-            <div id="tracks"></div>
-
-            <h2>Add a message</h2>
-            <label>Title <input id="t-title" autocomplete="off"></label>
-            <div class="row">
-                <label>Audio file <input id="t-file" type="file" accept="audio/*"></label>
-                <button type="button" id="t-rec" class="quiet">● Record</button>
+        </li>
+        <li id="step-3">
+            <div>
+                <b data-i18n="writer.guide.s3"></b>
+                <p class="note" data-i18n="writer.guide.s3Text"></p>
+                <label class="cap" for="g-endpoint" data-i18n="writer.guide.endpoint"></label>
+                <input class="field mono" id="g-endpoint" placeholder="https://….r2.cloudflarestorage.com" autocomplete="off" data-lpignore="true">
+                <label class="cap" for="g-key" data-i18n="writer.guide.keyId"></label>
+                <input class="field mono" id="g-key" autocomplete="off" data-lpignore="true">
+                <label class="cap" for="g-secret" data-i18n="writer.guide.secret"></label>
+                <input class="field mono" id="g-secret" type="password" autocomplete="new-password" data-lpignore="true">
             </div>
-            <label>When can it be played?
-                <select id="t-when">
-                    <option value="">Always</option>
-                    <option value="dates">Between two dates</option>
-                    <option value="yearly">Every year</option>
-                </select>
-            </label>
-            <div id="t-dates" class="row" hidden>
-                <label>From <input id="t-from" type="date"></label>
-                <label>To <input id="t-to" type="date"></label>
-            </div>
-            <div id="t-yearly" class="row" hidden>
-                <label>From (MM-DD) <input id="t-every-a" autocomplete="off" placeholder="12-20" pattern="\d{2}-\d{2}"></label>
-                <label>To (MM-DD) <input id="t-every-b" autocomplete="off" placeholder="12-27" pattern="\d{2}-\d{2}"></label>
-            </div>
-            <button type="button" id="t-add" class="quiet">Add message</button>
+        </li>
+    </ol>
+    <button type="button" class="primary" id="g-connect" data-i18n="writer.guide.connect"></button>
+    <p class="msg" id="g-msg"></p>
+</form>
 
-            <button type="button" id="save">Save pebbble</button>
-            <p id="save-msg" class="muted"></p>
-        </form>
-    </section>
+<!-- Paste a setup code made on another device -->
+<form class="sheet" id="paste-sheet" autocomplete="off" onsubmit="return false" role="dialog" aria-labelledby="paste-title">
+    <div class="handle"></div>
+    <h2 id="paste-title" data-i18n="writer.paste.title"></h2>
+    <p class="lead" data-i18n="writer.paste.lead"></p>
+    <textarea class="field mono" id="paste-code" rows="4" placeholder="pebbble-setup:…" autocomplete="off" data-lpignore="true"></textarea>
+    <button type="button" class="primary" id="paste-go" data-i18n="writer.paste.go"></button>
+    <p class="msg" id="paste-msg"></p>
+</form>
 
-    <section id="done" hidden>
-        <h2>Saved</h2>
-        <p class="muted">Tag link:</p>
-        <p><code id="done-url"></code></p>
-        <button type="button" id="write-tag">Write to tag</button>
-        <button type="button" id="copy" class="quiet">Copy link</button>
-        <button type="button" id="try" class="quiet">Open in player</button>
-        <p id="tag-msg" class="muted"></p>
-        <button type="button" class="quiet back">← My pebbbles</button>
-    </section>
-</main>
+<!-- Open a pebbble by its link -->
+<form class="sheet" id="link-sheet" autocomplete="off" onsubmit="return false" role="dialog" aria-labelledby="link-title">
+    <div class="handle"></div>
+    <h2 id="link-title" data-i18n="writer.link.title"></h2>
+    <p class="lead" data-i18n="writer.link.lead"></p>
+    <input class="field mono" id="link-in" placeholder="https://…#…" autocomplete="off" data-lpignore="true">
+    <button type="button" class="primary" id="link-go" data-i18n="writer.link.go"></button>
+    <p class="msg" id="link-msg"></p>
+</form>
+
+<!-- Add or change a voice -->
+<form class="sheet" id="voice-sheet" autocomplete="off" onsubmit="return false" role="dialog" aria-labelledby="v-head">
+    <div class="handle"></div>
+    <h2 id="v-head"></h2>
+    <div class="rec" id="v-rec">
+        <button type="button" class="rec-btn" id="rec-btn" data-i18n-label="writer.voice.record"><b></b></button>
+        <span class="rec-time" id="rec-time">0:00</span>
+        <span class="rec-or" id="rec-or"></span>
+        <input type="file" id="v-file" accept="audio/*" hidden>
+    </div>
+    <label class="cap" for="v-title" data-i18n="writer.voice.title"></label>
+    <input class="field" id="v-title" autocomplete="off" data-lpignore="true" data-i18n-placeholder="writer.voice.titlePlaceholder">
+    <span class="cap" data-i18n="writer.voice.when"></span>
+    <div class="when" id="v-when">
+        <button type="button" data-w="always" data-i18n="writer.voice.always"></button>
+        <button type="button" data-w="from" data-i18n="writer.voice.fromDate"></button>
+        <button type="button" data-w="yearly" data-i18n="writer.voice.yearly"></button>
+    </div>
+    <div id="v-from-box" hidden>
+        <label class="cap" for="v-from" data-i18n="writer.voice.wakesOnLabel"></label>
+        <input class="field" type="date" id="v-from">
+    </div>
+    <div id="v-yearly-box" hidden>
+        <span class="cap" data-i18n="writer.voice.yearFrom"></span>
+        <div class="daymonth"><select class="field" id="v-ya-d"></select><select class="field" id="v-ya-m"></select></div>
+        <span class="cap" data-i18n="writer.voice.yearUntil"></span>
+        <div class="daymonth"><select class="field" id="v-yb-d"></select><select class="field" id="v-yb-m"></select></div>
+    </div>
+    <p class="note" id="v-when-note"></p>
+    <button type="button" class="primary" id="v-save"></button>
+    <button type="button" class="danger" id="v-remove" data-i18n="writer.voice.remove"></button>
+    <p class="msg" id="v-msg"></p>
+</form>
+
+<!-- Password -->
+<form class="sheet" id="pw-sheet" autocomplete="off" onsubmit="return false" role="dialog" aria-labelledby="pw-title">
+    <div class="handle"></div>
+    <h2 id="pw-title" data-i18n="writer.pw.title"></h2>
+    <p class="lead" data-i18n="writer.pw.lead"></p>
+    <label class="cap" for="pw-in" id="pw-label"></label>
+    <input class="field" id="pw-in" type="password" autocomplete="new-password" data-lpignore="true">
+    <p class="note" data-i18n="writer.pw.forgiving"></p>
+    <label class="cap" for="pw-hint" data-i18n="writer.pw.hint"></label>
+    <input class="field" id="pw-hint" autocomplete="off" data-lpignore="true" data-i18n-placeholder="writer.pw.hintPlaceholder">
+    <button type="button" class="primary" id="pw-save" data-i18n="writer.pw.keep"></button>
+    <button type="button" class="danger" id="pw-remove" data-i18n="writer.pw.remove"></button>
+    <p class="msg" id="pw-msg"></p>
+</form>
+
+<!-- If someone finds it -->
+<form class="sheet" id="found-sheet" autocomplete="off" onsubmit="return false" role="dialog" aria-labelledby="found-title">
+    <div class="handle"></div>
+    <h2 id="found-title" data-i18n="writer.found.title"></h2>
+    <p class="lead" data-i18n="writer.found.lead"></p>
+    <label class="cap" for="f-contact" data-i18n="writer.found.contact"></label>
+    <input class="field" id="f-contact" autocomplete="off" data-lpignore="true" data-i18n-placeholder="writer.found.contactPlaceholder">
+    <span class="cap" data-i18n="writer.found.theyRead"></span>
+    <div class="finder" id="finder"></div>
+    <button type="button" class="primary" id="f-done" data-i18n="writer.done"></button>
+</form>
+
+<!-- Settings -->
+<div class="sheet" id="settings-sheet" role="dialog" aria-labelledby="settings-title">
+    <div class="handle"></div>
+    <h2 id="settings-title" data-i18n="settings.title"></h2>
+    <div class="set-group">
+        <label data-i18n="settings.language"></label>
+        <div class="chips" id="langs"></div>
+    </div>
+    <div class="set-group">
+        <label data-i18n="writer.settings.storage"></label>
+        <button class="menu-row" id="s-storage"></button>
+        <button class="menu-row" id="s-share"></button>
+    </div>
+    <div class="set-group">
+        <button class="danger" id="s-disconnect" data-i18n="writer.settings.disconnect"></button>
+    </div>
+    <p class="version" id="version">Pebbble writer</p>
+</div>
+
+<!-- Setup code for another device -->
+<div class="sheet" id="share-sheet" role="dialog" aria-labelledby="share-title">
+    <div class="handle"></div>
+    <h2 id="share-title" data-i18n="writer.share.title"></h2>
+    <p class="lead" data-i18n="writer.share.lead"></p>
+    <pre class="code" id="share-code"></pre>
+    <button type="button" class="primary" id="share-copy" data-i18n="writer.copy"></button>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
 <script type="module" src="writer.js"></script>
 </body>
 </html>

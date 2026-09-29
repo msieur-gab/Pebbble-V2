@@ -10,16 +10,11 @@
     "write": "如果你捡到了它，请写信给 {contact}。"
   },
   "page": {
-    "meta": "{name} · {count} 段声音",
-    "meta_one": "{name} · 1 段声音",
     "foot": "属于 {name}",
-    "footContact": "捡到请联系 {contact}",
-    "myPebbbles": "我的石头"
+    "footContact": "捡到请联系 {contact}"
   },
   "voice": {
-    "wakes": "{date} 醒来",
-    "until": "至 {date}",
-    "quiet": "已经安静了"
+    "wakes": "{date} 醒来"
   },
   "device": {
     "title": "这是你的手机吗？",
@@ -107,5 +102,227 @@
     "add": "添加到主屏幕",
     "later": "以后再说",
     "ios": "点击“分享”，然后选择“添加到主屏幕”。"
+  },
+  "pebbble": {
+    "forFrom": "给 {for} · 来自 {from}",
+    "for": "给 {for}",
+    "from": "来自 {from}"
+  },
+  "writer": {
+    "title": "工作室",
+    "edit": "编辑",
+    "untitled": "未命名",
+    "done": "完成",
+    "copy": "复制",
+    "copied": "已复制",
+    "copyFailed": "无法复制。请选中文字手动复制。",
+    "opening": "正在打开石头…",
+    "notFound": "这个链接没有对应的石头。",
+    "wrongLink": "这个链接打不开那颗石头。",
+    "offline": "无法连接存储空间。请检查网络。",
+    "welcome": {
+      "eyebrow": "Pebbble 工作室",
+      "title": "声音要住在哪里？",
+      "lead": "石头把声音加密后保存在你自己的存储空间里。在这台设备上连接一次即可。",
+      "paste": "粘贴设置码",
+      "pasteText": "在已经设置好工作室的设备上生成。",
+      "guide": "设置我的存储空间",
+      "guideText": "在 Cloudflare 中一步步完成，大约 10 分钟。"
+    },
+    "guide": {
+      "title": "设置你的存储空间",
+      "lead": "Cloudflare R2 保存加密后的声音，免费额度就足够了。请在另一个标签页打开 dash.cloudflare.com。",
+      "s1": "创建一个 bucket",
+      "s1Text": "R2 → Create bucket。名字随意。",
+      "bucket": "Bucket 名称",
+      "s2": "让石头能读取它",
+      "s2Text": "在 bucket 中：Settings → Public access → 允许 r2.dev 地址，然后粘贴到这里。文件依然是加密的：公开只表示石头可以取回它们。",
+      "public": "公开地址",
+      "cors": "在同一设置页的 CORS policy 中粘贴这条规则，让应用可以读取和保存：",
+      "s3": "给这台设备一把钥匙",
+      "s3Text": "R2 → Manage API tokens → Create token，只为这个 bucket 开启 Object Read & Write。粘贴 Cloudflare 显示的内容。",
+      "endpoint": "S3 地址（…r2.cloudflarestorage.com）",
+      "keyId": "Access key ID",
+      "secret": "Secret access key",
+      "connect": "连接",
+      "checking": "正在检查…",
+      "missing": "请先完成每一步。",
+      "badKey": "Cloudflare 拒绝了这把钥匙。请检查 S3 地址、access key 和 secret。",
+      "badPublic": "可以保存，但公开地址看不到这个 bucket。请检查第 2 步及其 CORS 规则。",
+      "connected": "存储空间已连接"
+    },
+    "paste": {
+      "title": "粘贴设置码",
+      "lead": "在已设置好的设备上：设置 → 设置另一台设备。复制设置码，发给自己，然后粘贴到这里。",
+      "go": "继续",
+      "bad": "这不是设置码。设置码以“pebbble-setup:”开头。"
+    },
+    "key": {
+      "eyebrow": "快好了",
+      "title": "选择一个密语",
+      "titleJoin": "你的密语",
+      "lead": "它会在你设置的每台设备上打开你的石头列表。在所有设备上使用同一个密语。它从不被保存或发送。",
+      "leadJoin": "你在另一台设备上选择的那个。它会打开设置码和你的石头列表。",
+      "placeholder": "四五个你记得住的词",
+      "lose": "如果忘了，列表就找不回了，但石头仍然可用：把石头靠近手机就能重新打开每一颗。",
+      "go": "打开我的石头",
+      "opening": "正在打开…",
+      "short": "请至少使用三个词。",
+      "wrong": "这个密语打不开那个设置码。"
+    },
+    "library": {
+      "new": "新的石头",
+      "tap": "把石头靠近手机背面，在这里打开它。",
+      "listening": "正在感应… 把石头靠近手机背面。",
+      "noNfc": "在安卓的 Chrome 中可以在这里打开石头。在这台设备上，请粘贴石头的链接。",
+      "pasteLink": "通过链接打开石头",
+      "notPebbble": "这个标签里没有石头。",
+      "cannotScan": "无法读取。请允许此网站使用 NFC 后再试。"
+    },
+    "link": {
+      "title": "通过链接打开",
+      "lead": "粘贴写在石头上的链接。",
+      "go": "打开",
+      "bad": "这不是石头的链接。"
+    },
+    "unlock": {
+      "lead": "它的声音上了锁。提示是：",
+      "leadNoHint": "它的声音上了锁。",
+      "go": "打开以编辑"
+    },
+    "editor": {
+      "anotherStone": "换一颗石头",
+      "name": "石头的名字",
+      "namePlaceholder": "给这颗石头起个名字",
+      "from": "来自",
+      "for": "给",
+      "fromPlaceholder": "你",
+      "optional": "可选",
+      "preview": "触碰石头时看到的内容",
+      "noVoices": "还没有声音",
+      "voices": "声音",
+      "new": "新",
+      "addVoice": "录制或添加声音",
+      "safe": "保护它",
+      "pwOff": "没有。拿着石头就能听。",
+      "pwOn": "已加密，没有提示",
+      "pwHint": "提示：{hint}",
+      "addContact": "添加联系方式",
+      "writeAgain": "写入另一颗石头",
+      "writeAgainText": "同样的声音，第二颗石头。",
+      "delete": "删除这颗石头",
+      "deleteText": "石头将不再播放任何声音。",
+      "deleteConfirm": "再点一次以删除“{name}”",
+      "deleted": "已删除“{name}”"
+    },
+    "voice": {
+      "newVoice": "新的声音",
+      "thisVoice": "这段声音",
+      "record": "录音",
+      "or": "或",
+      "chooseFile": "选择音频文件",
+      "otherFile": "换一个文件",
+      "recorded": "已录制",
+      "listen": "试听",
+      "tapToStop": "点击停止",
+      "title": "标题",
+      "titlePlaceholder": "晚安，小宝贝",
+      "when": "什么时候可以听到？",
+      "always": "一直",
+      "fromDate": "从某天开始",
+      "yearly": "每年",
+      "wakesOnLabel": "醒来日期",
+      "yearFrom": "每年从",
+      "yearUntil": "到",
+      "alwaysNote": "任何触碰石头的人都能听到。",
+      "fromNote": "它会沉睡到那一天，之后一直醒着。",
+      "yearlyNote": "它每年在这几天醒来，然后再次沉睡。",
+      "wakesOn": "{date} 醒来",
+      "everyYear": "每年 {from} 至 {to}",
+      "everyYearOn": "每年 {date}",
+      "add": "添加这段声音",
+      "keep": "保存修改",
+      "remove": "移除这段声音",
+      "removeConfirm": "再点一次以移除",
+      "needAudio": "请先录音或选择一个文件。",
+      "needTitle": "给它一个标题。",
+      "noMic": "麦克风不可用。请允许此网站使用麦克风，或选择一个文件。",
+      "badFile": "这个文件无法播放。请换一个。"
+    },
+    "pw": {
+      "title": "密码",
+      "lead": "可选。没有密码时，拿着石头就能听。",
+      "password": "密码",
+      "newPassword": "新密码",
+      "placeholder": "一个他们知道的词",
+      "keepEmpty": "留空则保留当前密码",
+      "forgiving": "大小写、多余的空格和重音符号都不影响（é = e）。数字和符号必须一致。",
+      "hint": "提示，所有人可见",
+      "hintPlaceholder": "扔进河里的东西",
+      "keep": "使用这个密码",
+      "remove": "移除密码",
+      "empty": "请先输入密码。"
+    },
+    "found": {
+      "title": "如果有人捡到它",
+      "lead": "任何触碰石头的人都能看到这些，即使没有密码。",
+      "contact": "联系方式",
+      "contactPlaceholder": "邮箱或电话号码",
+      "theyRead": "他们会看到",
+      "nothing": "还没有。没有联系方式，丢失的石头就回不来了。"
+    },
+    "save": {
+      "andWrite": "保存并写入石头",
+      "save": "保存",
+      "changes": "保存修改",
+      "needVoice": "请先添加一段声音。",
+      "locking": "正在给声音上锁…",
+      "uploading": "正在上传第 {n} 段声音，共 {total} 段…",
+      "saving": "正在保存…",
+      "saved": "已保存。石头会播放新的版本。",
+      "savedWriteLater": "已保存。在手机上打开它，写入石头。",
+      "failed": "无法保存。请检查网络后重试。"
+    },
+    "write": {
+      "bar": "写入",
+      "cancel": "取消",
+      "title": "把石头靠近手机背面",
+      "text": "保持不动，直到手机震动。只需一秒。",
+      "failed": "无法写入石头。请保持不动，稍微靠近手机上方。",
+      "retry": "重试"
+    },
+    "written": {
+      "title": "“{name}”已写入石头",
+      "text": "用任何手机触碰它即可聆听。",
+      "listen": "现在聆听",
+      "copy": "复制它的链接",
+      "back": "回到我的石头"
+    },
+    "lock": {
+      "title": "锁定标签",
+      "text": "防止任何人改写石头指向的地址。只在地址确定之后再这样做。",
+      "ask": "锁定这个标签…",
+      "confirmTitle": "永久锁定这个标签？",
+      "confirmText": "任何手机都无法再改写它，包括你的。声音仍然可以添加和修改。此操作无法撤销。",
+      "no": "暂不",
+      "yes": "锁定",
+      "hold": "再次把石头靠近手机…",
+      "done": "标签已锁定",
+      "doneText": "石头会永久保留这个地址。",
+      "failed": "无法锁定标签。"
+    },
+    "settings": {
+      "storage": "存储空间",
+      "connected": "已连接",
+      "bucket": "Bucket “{bucket}”",
+      "share": "设置另一台设备",
+      "shareText": "一个在那台设备上粘贴的设置码，用你的密语打开。",
+      "disconnect": "断开这台设备",
+      "disconnectConfirm": "再点一次以断开。石头仍然可用。"
+    },
+    "share": {
+      "title": "设置另一台设备",
+      "lead": "在另一台设备上选择“粘贴设置码”，粘贴这段内容，然后输入你的密语。没有密语，设置码什么也打不开。"
+    }
   }
 }

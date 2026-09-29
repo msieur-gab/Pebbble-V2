@@ -15,9 +15,10 @@ test('tag URL round-trips and fits an NTAG213', () => {
 
 test('header opens with the tag key, not with another', async () => {
     const p = F.newPebbble();
-    const h = F.newHeader({ name: 'Gab', contact: 'gab@example.com' });
+    const h = F.newHeader({ name: 'Lullabies', from: 'Papa', for: 'Lina', contact: 'papa@example.com' });
     const sealed = await F.sealHeader(h, p);
-    assert.equal((await F.openHeader(sealed, p)).owner.name, 'Gab');
+    const back = await F.openHeader(sealed, p);
+    assert.deepEqual([back.name, back.from, back.for, back.contact], ['Lullabies', 'Papa', 'Lina', 'papa@example.com']);
     await assert.rejects(F.openHeader(sealed, F.newPebbble()), /decrypt-failed/);
     // A header can't be moved to another pebbble id with the same key.
     await assert.rejects(F.openHeader(sealed, { ...p, id: F.newPebbble().id }), /decrypt-failed/);
@@ -58,12 +59,13 @@ test('password: set later, wraps existing tracks, wrong password fails', async (
     }
 });
 
-test('one-off window', () => {
-    const w = { from: '2026-12-24', to: '2026-12-26' };
-    assert.equal(F.windowStatus(w, new Date(2026, 11, 23)).state, 'locked');
-    assert.equal(F.windowStatus(w, new Date(2026, 11, 24, 0, 1)).state, 'open');
-    assert.equal(F.windowStatus(w, new Date(2026, 11, 26, 23, 59)).state, 'open');
-    assert.equal(F.windowStatus(w, new Date(2026, 11, 27)).state, 'past');
+test('from a date: asleep until that day, then awake for good', () => {
+    const w = { from: '2038-03-14' };
+    const before = F.windowStatus(w, new Date(2038, 2, 13, 23, 59));
+    assert.equal(before.state, 'locked');
+    assert.equal(before.opens.getTime(), new Date(2038, 2, 14).getTime());
+    assert.equal(F.windowStatus(w, new Date(2038, 2, 14, 0, 1)).state, 'open');
+    assert.equal(F.windowStatus(w, new Date(2090, 0, 1)).state, 'open');
     assert.equal(F.windowStatus(undefined).state, 'open');
 });
 
@@ -86,7 +88,7 @@ test('yearly window, including one that wraps the new year', () => {
 
 test('name and cover seed', async () => {
     const p = F.newPebbble();
-    const h = F.newHeader({ name: 'Gab' }, 'Lullabies');
+    const h = F.newHeader({ name: 'Lullabies', from: 'Gab' });
     assert.equal(F.coverSeed(h, p.id), p.id);
     h.cover = F.newCoverSeed();
     const back = await F.openHeader(await F.sealHeader(h, p), p);
@@ -139,12 +141,14 @@ test('password: forgiving about capitals, spaces and accents, exact about symbol
     assert.equal(F.relaxPassword('Año Niño Çà Über'), 'ano nino ca uber');
     assert.equal(F.relaxPassword('Straße'), 'straße');
     for (const bad of ['78szx86 riviere', '78@szx87 riviere', '78-szx-86 riviere']) await assert.rejects(F.unlock(h, id, bad), /wrong-password/);
+});
 
-    // A pebbble locked before this change (no 'relaxed' flag) keeps matching exactly.
-    // 'caillou' is already in relaxed form, so dropping the flag reproduces an old lock.
-    const old = F.newHeader({});
-    await F.setPassword(old, id, 'caillou');
-    delete old.pw.relaxed;
-    await F.unlock(old, id, 'caillou');
-    await assert.rejects(F.unlock(old, id, 'Caillou'), /wrong-password/);
+test('setup code: opens only with the same key phrase', async () => {
+    const settings = { accountId: 'acc', accessKeyId: 'AK', secretAccessKey: 'secret', bucket: 'pebbble', publicBase: 'https://pub-x.r2.dev' };
+    const code = await F.sealSetup(settings, await F.deriveSetupKey('pierre de rivière'));
+    assert.ok(F.isSetupCode(code));
+    assert.ok(!code.includes('secret'));
+    assert.deepEqual(await F.openSetup(code, await F.deriveSetupKey('pierre de rivière')), settings);
+    await assert.rejects(F.openSetup(code, await F.deriveSetupKey('other words')), /decrypt-failed/);
+    await assert.rejects(F.openSetup('hello', await F.deriveSetupKey('x')), /not-a-setup-code/);
 });

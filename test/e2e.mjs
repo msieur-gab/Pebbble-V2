@@ -19,37 +19,77 @@ const page = await phone.newPage();
 const errors = []; page.on('pageerror', e => errors.push(e.message));
 const log = (...a) => console.log('•', ...a);
 
-// Writer: new pebbble with password and three messages
-await page.goto(base + '/writer/');
-// This browser is "Gab's phone": set the library passphrase first
-await page.click('#settings summary');
-await page.fill('#lib-pass', 'pierre de rivière');
-await page.click('#save-settings');
-await page.waitForFunction(() => document.getElementById('mine-msg').textContent.startsWith('No pebbbles yet'));
-await page.click('#new');
-await page.fill('#p-name', 'Lullabies');
-const firstStone = await page.innerHTML('#w-cover');
-await page.click('#w-reroll');
-log('another stone drawn', firstStone !== await page.innerHTML('#w-cover'));
-const chosenStone = await page.$eval('#w-cover path[mask]', el => el.getAttribute('d'));
-await page.fill('#owner-name', 'Gab');
-await page.fill('#owner-contact', 'gab@example.com');
-await page.fill('#pw', 'caillou');
-await page.fill('#hint', 'what you throw in the river');
-const add = async (title, when, fill) => {
-  await page.fill('#t-title', title);
-  await page.setInputFiles('#t-file', SP + '/tone.wav');
-  await page.selectOption('#t-when', when);
-  if (fill) await fill();
-  await page.click('#t-add');
+// Web NFC stand-in: writing records the link, scanning waits for the test to "tap" a stone.
+const fakeNfc = () => {
+  window.NDEFReader = class {
+    constructor() { window.__ndef = this; }
+    async write(msg) { await new Promise(r => setTimeout(r, 300)); window.__written = msg.records[0].data; }
+    async makeReadOnly() { await new Promise(r => setTimeout(r, 200)); window.__locked = true; }
+    async scan() {}
+  };
 };
-await add('Hello', '');
-await add('Christmas', 'yearly', async () => { await page.fill('#t-every-a', '12-20'); await page.fill('#t-every-b', '12-27'); });
-await add('Old news', 'dates', async () => { await page.fill('#t-from', '2025-01-01'); await page.fill('#t-to', '2025-01-02'); });
-await page.click('#save');
-await page.waitForSelector('#done:not([hidden])', { timeout: 20000 });
-const url = await page.textContent('#done-url');
-log('tag URL', url, `(${url.length} chars)`);
+const tapStone = (pg, link) => pg.evaluate(link => window.__ndef.onreading({ message: { records: [{ recordType: 'url', data: new TextEncoder().encode(link) }] } }), link);
+await phone.addInitScript(fakeNfc);
+
+// First time: guided storage setup, then the key phrase
+const setupGuided = async (pg, phrase) => {
+  await pg.goto(base + '/writer/');
+  await pg.click('#c-guide'); await on(pg, 'guide-sheet');
+  await pg.fill('#g-public', 'https://pub-example.r2.dev');
+  await pg.fill('#g-endpoint', 'https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com');
+  await pg.fill('#g-key', 'key'); await pg.fill('#g-secret', 'secret');
+  await pg.click('#g-connect');
+  await pg.waitForSelector('#k-in');
+  await pg.fill('#k-in', phrase); await pg.click('#k-go');
+  await pg.waitForSelector('#shelf');
+};
+const on = (pg, id) => pg.waitForSelector(`#${id}.on`);
+const off = (pg, id) => pg.waitForSelector(`#${id}:not(.on)`, { state: 'attached' });
+await setupGuided(page, 'pierre de rivière');
+log('writer set up; shelf shows', await page.$$eval('#shelf button[data-id]', b => b.length), 'pebbbles');
+
+// A new pebbble: name, another stone, From / For, password, contact, three voices
+await page.click('#new');
+await page.waitForSelector('#e-name');
+await page.fill('#e-name', 'Lullabies');
+const firstStone = await page.innerHTML('#e-stone');
+await page.click('#reroll');
+log('another stone drawn', firstStone !== await page.innerHTML('#e-stone'));
+const chosenStone = await page.$eval('#e-stone path[mask]', el => el.getAttribute('d'));
+await page.fill('#e-from', 'Papa');
+await page.fill('#e-for', 'Lina');
+log('preview:', await page.$eval('#preview', el => el.innerText.replace(/\s*\n\s*/g, ' | ')));
+await page.click('#r-pw'); await on(page, 'pw-sheet');
+await page.fill('#pw-in', 'caillou'); await page.fill('#pw-hint', 'what you throw in the river');
+await page.click('#pw-save'); await off(page, 'pw-sheet');
+await page.click('#r-found'); await on(page, 'found-sheet');
+await page.fill('#f-contact', 'papa@example.com');
+log('finder will read:', await page.$eval('#finder', el => el.innerText.replace(/\s*\n\s*/g, ' ')));
+await page.click('#f-done'); await off(page, 'found-sheet');
+const add = async (pg, title, when, fill) => {
+  await pg.click('#add-voice'); await on(pg, 'voice-sheet');
+  await pg.setInputFiles('#v-file', SP + '/tone.wav');
+  await pg.waitForFunction(() => document.getElementById('rec-time').textContent !== '0:00');
+  await pg.fill('#v-title', title);
+  await pg.click(`#v-when [data-w="${when}"]`);
+  if (fill) await fill();
+  await pg.click('#v-save'); await off(pg, 'voice-sheet');
+};
+await add(page, 'Hello', 'always');
+await add(page, 'Christmas', 'yearly', async () => {
+  for (const [id, v] of [['#v-ya-d', '20'], ['#v-ya-m', '12'], ['#v-yb-d', '27'], ['#v-yb-m', '12']]) await page.selectOption(id, v);
+});
+await add(page, 'For your eighteenth birthday', 'from', () => page.fill('#v-from', '2090-03-14'));
+log('voices in the editor:', await page.$$eval('#e-voices .voice', r => r.map(x => x.innerText.replace(/\s*\n\s*/g, ' | '))));
+log('dock says:', await page.textContent('#dock-btn'));
+await page.click('#dock-btn');
+await page.waitForSelector('.check', { timeout: 20000 });
+const url = await page.evaluate(() => window.__written);
+log('written to the stone:', url, `(${url.length} chars) |`, await page.textContent('.write h1'));
+await page.click('#lock-ask'); await page.click('#lock-yes');
+await page.waitForFunction(() => window.__locked === true);
+await page.waitForFunction(() => document.querySelector('.lock-card b')?.textContent === 'Tag locked');
+log('tag locked after asking twice');
 
 // Stored files are ciphertext
 const id = new URL(url).hash.slice(1).split('.')[0];
@@ -65,7 +105,6 @@ const idbCount = pg => pg.evaluate(() => new Promise(res => {
     tx.oncomplete = () => { d.close(); res(out); }; };
   q.onerror = () => res({ pebbbles: 0, files: 0 });
 }));
-const on = (pg, id) => pg.waitForSelector(`#${id}.on`);
 const unlockWith = async (pg, pw) => {
   await on(pg, 'lock-sheet');
   await pg.fill('#pw', pw); await pg.click('#unlock');
@@ -162,16 +201,21 @@ log('after switching to not-owned', await idbCount(o));
 await o.click('#set-mine');
 await o.click('#scrim', { position: { x: 20, y: 20 } });
 
-// Writer: reopen by link, unlock, add a message, save — stone keeps its link
-await page.goto(base + '/writer/');
-await page.fill('#link', url); await page.click('#open-link');
-await page.waitForSelector('#unlock:not([hidden])');
-await page.fill('#unlock-pw', 'caillou'); await page.click('#unlock-btn');
-await page.waitForSelector('#fields:not([hidden])');
-await add('Added later', '');
-await page.click('#save');
-await page.waitForSelector('#done:not([hidden])');
-log('same link after edit', (await page.textContent('#done-url')) === url);
+// Writer: open the stone by tapping it, unlock, add a voice, save; the stone keeps its link
+await page.click('#w-done');
+await page.waitForSelector('#shelf button[data-id]');
+await page.click('#tap-hint');
+await page.waitForFunction(() => document.getElementById('tap-text').textContent.startsWith('Listening'));
+await tapStone(page, url);
+await page.waitForSelector('#u-pw');
+await page.fill('#u-pw', 'caillou'); await page.click('#u-go');
+await page.waitForSelector('#e-voices');
+await add(page, 'Added later', 'always');
+log('existing pebbble dock says:', await page.textContent('#dock-btn'));
+await page.click('#dock-btn');
+await page.waitForSelector('#shelf button[data-id]');
+const entry = await page.evaluate(() => JSON.parse(localStorage.getItem('pebbble-writer-library')).items[0]);
+log('same link after edit', `${base}/player/#${entry.id}.${entry.key}` === url);
 
 const g2 = await guestCtx.newPage();
 await g2.goto(url); await g2.click('#listen');
@@ -195,10 +239,8 @@ await g2.waitForFunction(t => document.getElementById('mini-title').textContent 
 log('swipe right on mini: back to', await g2.textContent('#mini-title'));
 await g2.click('#mini-title'); await on(g2, 'player');
 
-// My pebbbles: listed on this phone after saving
-await page.click('#done .back');
-await page.waitForSelector('#mine-list .mine');
-log('my pebbbles (phone)', await page.$$eval('#mine-list .mine', r => r.map(x => x.innerText.replace(/\n/g, ' | '))));
+// My pebbbles: listed on this phone
+log('my pebbbles (phone)', await page.$$eval('#shelf button[data-id]', r => r.map(x => x.innerText.replace(/\n/g, ' | '))));
 
 // Player on the creator's phone offers Edit, which opens the writer on that pebbble
 const mine = await phone.newPage(); mine.on('pageerror', e => errors.push(e.message));
@@ -210,32 +252,45 @@ await playing(mine);
 await mine.click('#open-menu'); await on(mine, 'menu-sheet');
 log('menu on creator phone:', await mine.$$eval('#menu-sheet .menu-row:not([hidden]) b', b => b.map(x => x.textContent)));
 await mine.click('#m-edit');
-await mine.waitForSelector('#unlock:not([hidden])');
+await mine.waitForSelector('#u-pw');
 log('Edit opened writer | address', mine.url());
-await mine.fill('#unlock-pw', 'caillou'); await mine.click('#unlock-btn');
-await mine.waitForSelector('#fields:not([hidden])');
-log('editing', await mine.inputValue('#p-name'), 'with', await mine.$$eval('#tracks .track', r => r.length), 'messages');
+await mine.fill('#u-pw', 'caillou'); await mine.click('#u-go');
+await mine.waitForSelector('#e-voices');
+log('editing', await mine.inputValue('#e-name'), 'with', await mine.$$eval('#e-voices .voice', r => r.length), 'voices');
 
 // Guest phone: no Edit
 await g2.click('#open-menu'); await on(g2, 'menu-sheet');
 log('Edit on guest phone', await g2.isVisible('#m-edit'));
 
-// A second device ("computer") with the same passphrase sees the same list
+// Another device ("computer", no NFC) joins with a setup code and the same key phrase
+await page.click('#gear'); await on(page, 'settings-sheet');
+await page.click('#s-share'); await on(page, 'share-sheet');
+await page.waitForFunction(() => document.getElementById('share-code').textContent.startsWith('pebbble-setup:'));
+const code = await page.textContent('#share-code');
+log('setup code', code.slice(0, 24) + '…', `(${code.length} chars, secret hidden: ${!code.includes('secret')})`);
 const pc = await (await browser.newContext()).newPage(); pc.on('pageerror', e => errors.push(e.message));
 await pc.goto(base + '/writer/');
-await pc.click('#settings summary'); await pc.fill('#lib-pass', 'pierre de rivière'); await pc.click('#save-settings');
-await pc.waitForSelector('#mine-list .mine');
-log('my pebbbles (computer)', await pc.$$eval('#mine-list .mine', r => r.map(x => x.innerText.replace(/\n/g, ' | '))));
-await pc.click('#mine-list .mine');
-await pc.waitForSelector('#unlock:not([hidden])');
+await pc.click('#c-paste'); await on(pc, 'paste-sheet');
+await pc.fill('#paste-code', code); await pc.click('#paste-go');
+await pc.waitForSelector('#k-in');
+await pc.fill('#k-in', 'wrong words here'); await pc.click('#k-go');
+await pc.waitForFunction(() => document.getElementById('k-msg').textContent);
+log('wrong key phrase on the code:', await pc.textContent('#k-msg'));
+await pc.fill('#k-in', 'pierre de rivière'); await pc.click('#k-go');
+await pc.waitForSelector('#shelf button[data-id]');
+log('my pebbbles (computer)', await pc.$$eval('#shelf button[data-id]', r => r.map(x => x.innerText.replace(/\n/g, ' | '))));
+log('computer without NFC says:', await pc.textContent('#tap-text'));
 
 // Change the password and hint on the computer; recordings untouched
 const before = readdirSync(`.dev-bucket/${id}`).filter(f => f !== 'header').map(f => f + readFileSync(`.dev-bucket/${id}/${f}`).length).sort().join();
-await pc.fill('#unlock-pw', 'caillou'); await pc.click('#unlock-btn');
-await pc.waitForSelector('#fields:not([hidden])');
-await pc.fill('#hint-edit', 'on the beach');
-await pc.fill('#pw-change', 'galet');
-await pc.click('#save'); await pc.waitForSelector('#done:not([hidden])');
+await pc.click('#shelf button[data-id]');
+await pc.waitForSelector('#u-pw');
+await pc.fill('#u-pw', 'caillou'); await pc.click('#u-go');
+await pc.waitForSelector('#e-voices');
+await pc.click('#r-pw'); await on(pc, 'pw-sheet');
+await pc.fill('#pw-in', 'galet'); await pc.fill('#pw-hint', 'on the beach');
+await pc.click('#pw-save'); await off(pc, 'pw-sheet');
+await pc.click('#dock-btn'); await pc.waitForSelector('#shelf button[data-id]');
 const after = readdirSync(`.dev-bucket/${id}`).filter(f => f !== 'header').map(f => f + readFileSync(`.dev-bucket/${id}/${f}`).length).sort().join();
 log('password changed; recordings untouched', before === after);
 
@@ -256,21 +311,22 @@ await own2.waitForSelector('.empty');
 log('forgotten: stored on phone', await idbCount(own2), '| library shows:', await own2.textContent('.empty h1'));
 
 // Remove the password entirely
-await pc.click('#done .back'); await pc.click('#mine-list .mine');
-await pc.waitForSelector('#unlock:not([hidden])');
-await pc.fill('#unlock-pw', 'galet'); await pc.click('#unlock-btn');
-await pc.waitForSelector('#fields:not([hidden])');
-await pc.click('#pw-remove');
-await pc.click('#save'); await pc.waitForSelector('#done:not([hidden])');
+await pc.click('#shelf button[data-id]');
+await pc.waitForSelector('#u-pw');
+await pc.fill('#u-pw', 'galet'); await pc.click('#u-go');
+await pc.waitForSelector('#e-voices');
+await pc.click('#r-pw'); await on(pc, 'pw-sheet');
+await pc.click('#pw-remove'); await off(pc, 'pw-sheet');
+log('password row now:', await pc.$eval('#r-pw span span', el => el.textContent));
+await pc.click('#dock-btn'); await pc.waitForSelector('#shelf button[data-id]');
 const open3 = await guestCtx.newPage();
 await open3.goto(url); await open3.click('#listen');
 log('password removed: opens without asking:', await playing(open3));
 
-const wrongPc = await (await browser.newContext()).newPage();
-await wrongPc.goto(base + '/writer/');
-await wrongPc.click('#settings summary'); await wrongPc.fill('#lib-pass', 'wrong words'); await wrongPc.click('#save-settings');
-await wrongPc.waitForFunction(() => document.getElementById('mine-msg').textContent.startsWith('No pebbbles'));
-log('other passphrase sees', await wrongPc.$$eval('#mine-list .mine', r => r.length), 'pebbbles');
+// Another key phrase sees another (empty) list
+const other = await (await browser.newContext()).newPage();
+await setupGuided(other, 'other words entirely');
+log('other key phrase sees', await other.$$eval('#shelf button[data-id]', r => r.length), 'pebbbles');
 // ---------- Install suggestion + persistent storage ----------
 const stubs = () => {
   window.__persist = 0;
@@ -303,5 +359,12 @@ await ios.goto(base + '/player/'); await ios.waitForSelector('#shelf');
 log('iPhone after "Not now", library shows card:', !!(await ios.$('.install')));
 // Not-owned phone: never suggested
 log('not-owned phone shows card:', !!(await open3.$('.install')));
+// Delete the pebbble from the computer: files gone, list empty, the stone plays nothing
+await pc.click('#shelf button[data-id]');
+await pc.waitForSelector('#r-delete');
+await pc.click('#r-delete'); await pc.click('#r-delete');
+await pc.waitForSelector('#shelf');
+await pc.waitForFunction(() => !document.querySelector('#shelf button[data-id]'));
+log('deleted: files left', readdirSync(`.dev-bucket/${id}`).length, '| list', await pc.$$eval('#shelf button[data-id]', r => r.length));
 log('page errors', errors.length ? errors : 'none');
 await browser.close();

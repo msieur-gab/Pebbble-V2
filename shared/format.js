@@ -84,13 +84,14 @@ const checkAad = id => `pebbble/v2/pwcheck/${id}`;
 
 /**
  * Header shape:
- * { v, name, cover?, owner: {name, contact}, hint?, pw?: {salt, rounds, check},
- *   tracks: [{ f, title, type, duration?, k? | wk?, window? }], updated }
+ * { v, name, cover?, from, for, contact, hint?, pw?: {salt, rounds, check},
+ *   tracks: [{ f, title, type, duration, k? | wk?, window? }], updated }
+ * `from` made it, `for` is who it's for (optional), `contact` is shown to anyone who finds it.
  * A track carries `k` (its key) when there is no password, `wk` (its key wrapped
  * with the password key) when there is one.
  */
-export function newHeader(owner, name = '') {
-    return { v: VERSION, name, owner: { name: owner?.name || '', contact: owner?.contact || '' }, tracks: [], updated: Date.now() };
+export function newHeader({ name = '', from = '', for: to = '', contact = '' } = {}) {
+    return { v: VERSION, name, from, for: to, contact, tracks: [], updated: Date.now() };
 }
 
 /** Seed for the pebbble's drawn cover: the pebbble id unless another stone was chosen. */
@@ -121,9 +122,8 @@ export function openTrack(sealed, id, file, key) {
 }
 
 /** Add a track entry to the header. pwKey is required when the header has a password. */
-export async function addTrack(header, id, { file, title, type, duration, window, key }, pwKey) {
-    const entry = { f: file, title, type };
-    if (duration) entry.duration = duration;
+export async function addTrack(header, id, { file, title, type, duration = 0, window, key }, pwKey) {
+    const entry = { f: file, title, type, duration };
     if (window) entry.window = window;
     if (header.pw) {
         if (!pwKey) throw new Error('password-required');
@@ -169,7 +169,6 @@ export async function setPassword(header, id, password, hint = '') {
     const salt = randomBytes(16);
     const pwKey = await derivePwKey(relaxPassword(password), salt, PBKDF2_ROUNDS);
     header.pw = {
-        relaxed: true, // older pebbbles lack this and keep exact matching
         salt: b64u.enc(salt),
         rounds: PBKDF2_ROUNDS,
         check: b64u.enc(await seal(pwKey, te.encode('ok'), checkAad(id))),
@@ -210,8 +209,8 @@ export async function pwKeyStillValid(header, id, pwKey) {
 
 /** Returns pwKey, or throws 'wrong-password'. */
 export async function unlock(header, id, password) {
-    const { salt, rounds, check, relaxed } = header.pw;
-    const pwKey = await derivePwKey(relaxed ? relaxPassword(password) : password, b64u.dec(salt), rounds);
+    const { salt, rounds, check } = header.pw;
+    const pwKey = await derivePwKey(relaxPassword(password), b64u.dec(salt), rounds);
     try {
         await open(pwKey, b64u.dec(check), checkAad(id));
     } catch {
@@ -221,14 +220,14 @@ export async function unlock(header, id, password) {
 }
 
 // ---------- date windows (discovery, not security: follows the phone's clock) ----------
-// one-off: { from: 'YYYY-MM-DD', to: 'YYYY-MM-DD' }   (either may be omitted)
-// yearly:  { every: 'MM-DD..MM-DD' }                   (may wrap the new year, e.g. '12-28..01-03')
+// from a date: { from: 'YYYY-MM-DD' }   asleep until that day, then awake for good
+// every year:  { every: 'MM-DD..MM-DD' } (may wrap the new year, e.g. '12-28..01-03')
 
 const day = (y, m, d) => new Date(y, m - 1, d);
 const ymd = s => s.split('-').map(Number);
 const endOf = d => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
 
-/** { state: 'open' | 'locked' | 'past', opens?: Date, closes?: Date } */
+/** { state: 'open' | 'locked', opens?: Date, closes?: Date } */
 export function windowStatus(window, now = new Date()) {
     if (!window) return { state: 'open' };
 
@@ -247,17 +246,14 @@ export function windowStatus(window, now = new Date()) {
         }
     }
 
-    const opens = window.from ? day(...ymd(window.from)) : null;
-    const closes = window.to ? endOf(day(...ymd(window.to))) : null;
-    if (opens && now < opens) return { state: 'locked', opens };
-    if (closes && now > closes) return { state: 'past', closes };
-    return { state: 'open', ...(closes && { closes }) };
+    const opens = day(...ymd(window.from));
+    return now < opens ? { state: 'locked', opens } : { state: 'open' };
 }
 
 // ---------- writer library (the creator's list of pebbbles) ----------
 // One encrypted file per creator: _library/<libId>. Both libId and the key come
 // from a passphrase, so any device with the passphrase finds and opens the same list.
-// { v: 1, items: [{ id, key, name, cover, owner, count, updated }] }
+// { v: 1, items: [{ id, key, name, cover, for, count, updated }] }
 
 const libAad = libId => `pebbble/v2/library/${libId}`;
 
@@ -284,3 +280,37 @@ export function upsertLibrary(lib, entry) {
     lib.items = [entry, ...lib.items.filter(i => i.id !== entry.id)];
     return lib;
 }
+
+/** Remove one pebbble from the list. */
+export function dropFromLibrary(lib, id) {
+    lib.items = lib.items.filter(i => i.id !== id);
+    return lib;
+}
+
+// ---------- setup code (moves the storage settings to another device) ----------
+// "pebbble-setup:<sealed>" where sealed = AES-GCM(setupKey, settings JSON).
+// setupKey comes from the key phrase, so the code alone opens nothing: the other
+// device needs the same key phrase. Only the derived key is kept, never the phrase.
+
+const SETUP_PREFIX = 'pebbble-setup:';
+const setupAad = 'pebbble/v2/setup';
+
+/** Key phrase → setupKey (base64url). Not tied to a bucket: the bucket is inside the code. */
+export async function deriveSetupKey(passphrase) {
+    const base = await subtle.importKey('raw', te.encode(passphrase.normalize('NFC')), 'PBKDF2', false, ['deriveBits']);
+    const bits = await subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: te.encode(setupAad), iterations: PBKDF2_ROUNDS }, base, 256);
+    return b64u.enc(new Uint8Array(bits));
+}
+
+export async function sealSetup(settings, setupKey) {
+    return SETUP_PREFIX + b64u.enc(await seal(b64u.dec(setupKey), te.encode(JSON.stringify(settings)), setupAad));
+}
+
+/** Throws 'not-a-setup-code' or 'decrypt-failed' (wrong key phrase). */
+export async function openSetup(code, setupKey) {
+    const m = /^pebbble-setup:([A-Za-z0-9_-]+)$/.exec(code.trim());
+    if (!m) throw new Error('not-a-setup-code');
+    return JSON.parse(td.decode(await open(b64u.dec(setupKey), b64u.dec(m[1]), setupAad)));
+}
+
+export const isSetupCode = code => /^pebbble-setup:[A-Za-z0-9_-]+$/.test(code.trim());
