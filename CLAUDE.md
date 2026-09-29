@@ -26,6 +26,8 @@ Two web apps, no build step, no runtime dependencies:
 
 ## Format and security model (shared/format.js)
 
+- **No backward compatibility yet.** No pebbble has been given away, so when the format changes, change it cleanly: no legacy flags, fallbacks or migration code. Gab rewrites his own test stones. This rule ends the day the first stone is distributed.
+
 - **Tag holds one URL**: `<appBase>#<id>.<key>`. `id` = 12 random bytes (base64url, 16 chars) naming the folder in R2; `key` = 32 random bytes (43 chars) that opens the header. Both sit after `#`, so they never reach a server; the player strips them from the address bar on load. Works on iPhone, whose background NFC reading opens the URL in Safari with no app and no serial access. About 90 characters, fits an NTAG213.
 - **The NFC serial is NOT used.** It isn't secret (any phone reads it), it's guessable, and iPhone web pages can't read it. We discussed serial-as-id and serial-derived keys and rejected both. Don't reintroduce them.
 - **R2 layout**: `<id>/header` = AES-256-GCM(tag key, JSON), AAD `pebbble/v2/header/<id>`; `<id>/<file>` = AES-GCM(per-track random key, audio), AAD binds id + file name. Blobs are `nonce(12) || ciphertext`.
