@@ -6,8 +6,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 const base = process.env.BASE || 'http://localhost:8787';
 const SP = mkdtempSync(join(tmpdir(), 'pebbble-'));
-// one second of 440 Hz, 8 kHz mono WAV
-const n = 8000, wav = Buffer.alloc(44 + n * 2);
+// 30 seconds of 440 Hz, 8 kHz mono WAV (long enough that a voice never ends mid-check)
+const n = 8000 * 30, wav = Buffer.alloc(44 + n * 2);
 wav.write('RIFF', 0); wav.writeUInt32LE(36 + n * 2, 4); wav.write('WAVEfmt ', 8); wav.writeUInt32LE(16, 16);
 wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22); wav.writeUInt32LE(8000, 24); wav.writeUInt32LE(16000, 28);
 wav.writeUInt16LE(2, 32); wav.writeUInt16LE(16, 34); wav.write('data', 36); wav.writeUInt32LE(n * 2, 40);
