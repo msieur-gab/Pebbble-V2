@@ -150,7 +150,10 @@
       "checking": "Checking…",
       "empty": "Fill in “{field}”.",
       "unreadable": "The writer can’t read “{field}”. Paste it exactly as Cloudflare shows it.",
-      "badKey": "Cloudflare refused the key. Check the S3 address, the access key and the secret.",
+      "blocked": "The browser could not reach the bucket. Add {origin} to the bucket’s CORS rule (step 2), and check the S3 address.",
+      "noBucket": "Cloudflare has no bucket “{bucket}” at this S3 address. Check the bucket name and the address.",
+      "badKey": "Cloudflare refused the key. Use the Access Key ID and Secret Access Key (not the token value), with Object Read & Write on this bucket.",
+      "failed": "Cloudflare answered with an error ({status}). Try again in a minute.",
       "badPublic": "Saving works, but the public address doesn't show the bucket. Check step 2 and its CORS rule.",
       "connected": "Storage connected"
     },

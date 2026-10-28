@@ -150,7 +150,10 @@
       "checking": "正在检查…",
       "empty": "请填写“{field}”。",
       "unreadable": "无法识别“{field}”。请按 Cloudflare 显示的内容原样粘贴。",
-      "badKey": "Cloudflare 拒绝了这把钥匙。请检查 S3 地址、access key 和 secret。",
+      "blocked": "浏览器无法连接到存储桶。请把 {origin} 加入存储桶的 CORS 规则（第 2 步），并检查 S3 地址。",
+      "noBucket": "Cloudflare 在这个 S3 地址下没有名为“{bucket}”的存储桶。请检查存储桶名称和地址。",
+      "badKey": "Cloudflare 拒绝了这个密钥。请使用 Access Key ID 和 Secret Access Key（不是令牌值），并对此存储桶开启 Object Read & Write。",
+      "failed": "Cloudflare 返回了错误（{status}）。请稍后再试。",
       "badPublic": "可以保存，但公开地址看不到这个 bucket。请检查第 2 步及其 CORS 规则。",
       "connected": "存储空间已连接"
     },

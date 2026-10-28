@@ -150,7 +150,10 @@
       "checking": "Vérification…",
       "empty": "Remplis « {field} ».",
       "unreadable": "Le writer ne reconnaît pas « {field} ». Colle-le tel que Cloudflare l’affiche.",
-      "badKey": "Cloudflare a refusé la clé. Vérifie l’adresse S3, l’access key et le secret.",
+      "blocked": "Le navigateur n’a pas pu joindre le bucket. Ajoute {origin} à la règle CORS du bucket (étape 2), et vérifie l’adresse S3.",
+      "noBucket": "Cloudflare n’a pas de bucket « {bucket} » à cette adresse S3. Vérifie le nom du bucket et l’adresse.",
+      "badKey": "Cloudflare a refusé la clé. Utilise l’Access Key ID et la Secret Access Key (pas la valeur du jeton), avec Object Read & Write sur ce bucket.",
+      "failed": "Cloudflare a répondu par une erreur ({status}). Réessaie dans une minute.",
       "badPublic": "L’enregistrement marche, mais l’adresse publique ne montre pas le bucket. Vérifie l’étape 2 et sa règle CORS.",
       "connected": "Stockage connecté"
     },

@@ -150,7 +150,10 @@
       "checking": "Comprobando…",
       "empty": "Rellena «{field}».",
       "unreadable": "El writer no reconoce «{field}». Pégalo tal como lo muestra Cloudflare.",
-      "badKey": "Cloudflare rechazó la clave. Revisa la dirección S3, la access key y el secret.",
+      "blocked": "El navegador no pudo llegar al bucket. Añade {origin} a la regla CORS del bucket (paso 2) y revisa la dirección S3.",
+      "noBucket": "Cloudflare no tiene un bucket «{bucket}» en esta dirección S3. Revisa el nombre del bucket y la dirección.",
+      "badKey": "Cloudflare rechazó la clave. Usa el Access Key ID y la Secret Access Key (no el valor del token), con Object Read & Write en este bucket.",
+      "failed": "Cloudflare respondió con un error ({status}). Inténtalo de nuevo en un minuto.",
       "badPublic": "Guardar funciona, pero la dirección pública no muestra el bucket. Revisa el paso 2 y su regla CORS.",
       "connected": "Almacenamiento conectado"
     },

@@ -246,7 +246,15 @@ $('g-connect').onclick = async () => {
     try {
         const probe = F.randomBytes(8);
         try { await R2.put(creds(s), '_check', probe, { cacheControl: 'no-cache' }); }
-        catch { $('g-msg').textContent = t('writer.guide.badKey'); return; }
+        catch (e) {
+            // No answer at all (TypeError) means the browser blocked it: CORS, or an address that doesn't exist.
+            const status = Number(/^upload-failed (\d+)/.exec(e.message)?.[1]);
+            $('g-msg').textContent = !status ? t('writer.guide.blocked', { origin: location.origin })
+                : status === 404 ? t('writer.guide.noBucket', { bucket: s.bucket })
+                : status === 401 || status === 403 ? t('writer.guide.badKey')
+                : t('writer.guide.failed', { status });
+            return;
+        }
         let back = null;
         try { back = await R2.get(publicBase(s), '_check', { fresh: true }); } catch {}
         if (!back || back.join() !== probe.join()) { $('g-msg').textContent = t('writer.guide.badPublic'); return; }
