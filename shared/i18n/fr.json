@@ -62,8 +62,6 @@
   },
   "menu": {
     "label": "Ce pebbble",
-    "edit": "Modifier ce pebbble",
-    "editText": "Ajouter des voix, renommer, changer le mot de passe. Seulement sur ton téléphone.",
     "forget": "Oublier sur ce téléphone",
     "forgetText": "Ses voix quittent ce téléphone. La pierre les garde : touche-la pour les retrouver.",
     "forgetConfirm": "Touche encore pour oublier « {name} »",

@@ -15,7 +15,7 @@ import { $, esc, mmss, stone, plural, ICON, dedication, belongsTo, createSheets,
 const VERSION = '2026-10-28 · 08:10'; // shown in Settings
 const SETTINGS_KEY = 'pebbble-writer-settings'; // sealed with the key phrase: { v, salt, sealed }
 const UNLOCK_KEY = 'pebbble-writer-unlock';     // this tab's device key, until the writer is closed
-const LIB_CACHE = 'pebbble-writer-library';     // no keys; also read by the player to offer Edit
+const LIB_CACHE = 'pebbble-writer-library';     // no keys: names, stones, ids
 const canNfc = 'NDEFReader' in window;
 
 let view = 'none';
@@ -80,7 +80,7 @@ const publicBase = (s = loadSettings()) => (config.devEndpoint ? config.publicBa
 
 let library = F.newLibrary();
 const libCreds = () => { const s = loadSettings(); return s.libId ? { libId: s.libId, libKey: s.libKey } : null; };
-// The copy on this device holds no keys: names and stones for the shelf, ids for the player's Edit.
+// The copy on this device holds no keys: names, stones and ids for the shelf.
 const cacheLibrary = () => {
     const items = library.items.map(({ id, name, cover, for: to, count, updated }) => ({ id, name, cover, for: to, count, updated }));
     try { localStorage.setItem(LIB_CACHE, JSON.stringify({ ...library, items })); } catch {}
@@ -255,7 +255,7 @@ async function home() {
     await libraryLoad;
 }
 
-/** After the key phrase: the pebbble the player's Edit asked for, or my pebbbles. */
+/** After the key phrase: the pebbble its link asked for, or my pebbbles. */
 let pendingOpen = null;
 async function afterKey() {
     const p = pendingOpen;
@@ -1023,7 +1023,7 @@ async function copy(text) {
 
 await initI18n();
 revealPasswords();
-// Opened from the player's Edit: writer/#<id>.<key>
+// Opened with a pebbble's link: writer/#<id>.<key>
 const fromPlayer = F.parseFragment(location.hash);
 if (fromPlayer) history.replaceState(null, '', location.pathname);
 await unlockFromSession();

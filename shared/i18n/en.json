@@ -62,8 +62,6 @@
   },
   "menu": {
     "label": "This pebbble",
-    "edit": "Edit this pebbble",
-    "editText": "Add voices, rename, change the password. Only on your phone.",
     "forget": "Forget on this phone",
     "forgetText": "Its voices leave this phone. The stone keeps them: tap it to bring them back.",
     "forgetConfirm": "Tap again to forget “{name}”",

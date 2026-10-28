@@ -267,7 +267,7 @@ await g2.click('#mini-title'); await on(g2, 'player');
 // My pebbbles: listed on this phone
 log('my pebbbles (phone)', await page.$$eval('#shelf button[data-id]', r => r.map(x => x.innerText.replace(/\n/g, ' | '))));
 
-// Player on the creator's phone offers Edit, which opens the writer on that pebbble
+// The player only opens and plays: no Edit, even on the creator's phone
 const mine = await phone.newPage(); mine.on('pageerror', e => errors.push(e.message));
 await mine.goto(url);
 await mine.click('#listen');
@@ -275,18 +275,7 @@ await on(mine, 'device-sheet'); await mine.click('#device-yes');
 await unlockWith(mine, 'caillou');
 await playing(mine);
 await mine.click('#open-menu'); await on(mine, 'menu-sheet');
-log('menu on creator phone:', await mine.$$eval('#menu-sheet .menu-row:not([hidden]) b', b => b.map(x => x.textContent)));
-await mine.click('#m-edit');
-await mine.waitForSelector('#k-in');
-log('Edit asks for the key phrase first | address', mine.url());
-await mine.fill('#k-in', 'pierre de rivière'); await mine.click('#k-go');
-await mine.waitForSelector('#e-voices');
-log('then opens the pebbble, no password');
-log('editing', await mine.inputValue('#e-name'), 'with', await mine.$$eval('#e-voices .voice', r => r.length), 'voices');
-
-// Guest phone: no Edit
-await g2.click('#open-menu'); await on(g2, 'menu-sheet');
-log('Edit on guest phone', await g2.isVisible('#m-edit'));
+log('menu on creator phone:', await mine.$$eval('#menu-sheet .menu-row:not([hidden]) b', b => b.map(x => x.textContent)), '| Edit:', !!(await mine.$('#m-edit')));
 
 // Another device ("computer", no NFC) joins with a setup code and the same key phrase
 await page.click('#gear'); await on(page, 'settings-sheet');
