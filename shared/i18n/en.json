@@ -165,6 +165,8 @@
     },
     "key": {
       "eyebrow": "Almost there",
+      "eyebrowUnlock": "Welcome back",
+      "leadUnlock": "It opens the writer and your pebbbles on this device.",
       "title": "Choose a key phrase",
       "titleJoin": "Your key phrase",
       "lead": "It opens your list of pebbbles on every device you set up. At least {n} characters: words, numbers, signs, as you like. It is never saved or sent.",

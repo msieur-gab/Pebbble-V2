@@ -277,8 +277,11 @@ await playing(mine);
 await mine.click('#open-menu'); await on(mine, 'menu-sheet');
 log('menu on creator phone:', await mine.$$eval('#menu-sheet .menu-row:not([hidden]) b', b => b.map(x => x.textContent)));
 await mine.click('#m-edit');
+await mine.waitForSelector('#k-in');
+log('Edit asks for the key phrase first | address', mine.url());
+await mine.fill('#k-in', 'pierre de rivière'); await mine.click('#k-go');
 await mine.waitForSelector('#e-voices');
-log('Edit opened writer, no password | address', mine.url());
+log('then opens the pebbble, no password');
 log('editing', await mine.inputValue('#e-name'), 'with', await mine.$$eval('#e-voices .voice', r => r.length), 'voices');
 
 // Guest phone: no Edit
@@ -303,12 +306,14 @@ await pc.fill('#k-in', 'pierre de rivière'); await pc.click('#k-go');
 await pc.waitForSelector('#shelf button[data-id]');
 log('my pebbbles (computer)', await pc.$$eval('#shelf button[data-id]', r => r.map(x => x.innerText.replace(/\n/g, ' | '))));
 log('computer without NFC says:', await pc.textContent('#tap-text'));
-// A device set up before setup codes asks for its phrase once, and only the same phrase opens the list
-await pc.evaluate(() => { const s = JSON.parse(localStorage.getItem('pebbble-writer-settings')); delete s.setupKey; localStorage.setItem('pebbble-writer-settings', JSON.stringify(s)); });
-await pc.reload(); await pc.waitForSelector('#k-in');
+// Nothing the writer keeps is readable without the phrase, and it asks for it each time it opens
+log('kept on the device, readable:', await pc.evaluate(() => /secret|libKey|"key"/.test(localStorage.getItem('pebbble-writer-settings') + localStorage.getItem('pebbble-writer-library'))));
+await pc.reload();
+log('a reload in the same tab stays open:', await pc.isVisible('#shelf'));
+await pc.evaluate(() => sessionStorage.clear()); await pc.reload(); await pc.waitForSelector('#k-in');
 await pc.fill('#k-in', 'Pierre de rivière'); await pc.click('#k-go');
 await pc.waitForFunction(() => document.getElementById('k-msg').textContent);
-log('same device, different phrase:', await pc.textContent('#k-msg'));
+log('writer opened again, different phrase:', await pc.textContent('#k-msg'));
 await pc.fill('#k-in', 'pierre de rivière'); await pc.click('#k-go');
 await pc.waitForSelector('#shelf button[data-id]');
 log('same phrase: list back,', await pc.$$eval('#shelf button[data-id]', r => r.length), 'pebbble');

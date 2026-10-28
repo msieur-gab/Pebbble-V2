@@ -161,3 +161,12 @@ test('a password can be checked exactly as typed, for pebbbles locked before pas
     await assert.rejects(F.unlock(header, id, 'MUC', { asTyped: true }), /wrong-password/);
     await F.unlock(header, id, 'MUC');
 });
+
+test('device: the writer settings open only with the key phrase that sealed them', async () => {
+    const settings = { accessKeyId: 'AK', secretAccessKey: 'secret', libKey: 'lk' };
+    const salt = F.newDeviceSalt();
+    const stored = await F.sealDevice(settings, salt, await F.deriveDeviceKey('pierre de rivière', salt));
+    assert.ok(!JSON.stringify(stored).includes('secret'));
+    assert.deepEqual(await F.openDevice(stored, await F.deriveDeviceKey('pierre de rivière', stored.salt)), settings);
+    await assert.rejects(F.openDevice(stored, await F.deriveDeviceKey('Pierre de rivière', stored.salt)), /decrypt-failed/);
+});

@@ -319,3 +319,27 @@ export async function openSetup(code, setupKey) {
 }
 
 export const isSetupCode = code => /^pebbble-setup:[A-Za-z0-9_-]+$/.test(code.trim());
+
+// ---------- the writer's settings on one device ----------
+// Storage keys, list key and setup key are kept sealed with a key from the key phrase and a salt
+// of this device, so nothing the writer keeps can be read without the phrase. { v: 1, salt, sealed }
+
+const deviceAad = 'pebbble/v2/device';
+
+export const newDeviceSalt = () => b64u.enc(randomBytes(16));
+
+/** Key phrase + this device's salt → deviceKey (base64url). */
+export async function deriveDeviceKey(passphrase, salt) {
+    const base = await subtle.importKey('raw', te.encode(passphrase.normalize('NFC')), 'PBKDF2', false, ['deriveBits']);
+    const bits = await subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: b64u.dec(salt), iterations: PBKDF2_ROUNDS }, base, 256);
+    return b64u.enc(new Uint8Array(bits));
+}
+
+export async function sealDevice(settings, salt, deviceKey) {
+    return { v: 1, salt, sealed: b64u.enc(await seal(b64u.dec(deviceKey), te.encode(JSON.stringify(settings)), deviceAad)) };
+}
+
+/** Throws 'decrypt-failed' when the key phrase is wrong. */
+export async function openDevice(stored, deviceKey) {
+    return JSON.parse(td.decode(await open(b64u.dec(deviceKey), b64u.dec(stored.sealed), deviceAad)));
+}

@@ -2,6 +2,7 @@
 //
 // First time on a device: connect storage (guided, or a setup code from another
 // device), then choose the key phrase that opens "My pebbbles" everywhere.
+// Every time the writer opens: the key phrase, which unlocks what this device keeps.
 // Then: my pebbbles → the editor (name, From / For, voices, password, if found)
 // → save → hold the stone to the phone. Writing tags needs Chrome on Android;
 // elsewhere a pebbble is saved and written later from the phone.
@@ -11,9 +12,10 @@ import { config } from '../shared/config.js';
 import { initI18n, setLanguage, language, LANGUAGES, t } from '../shared/i18n.js';
 import { $, esc, mmss, stone, plural, ICON, dedication, belongsTo, createSheets, toast, shake, revealPasswords, hidePasswords } from '../shared/ui.js';
 
-const VERSION = '2026-09-29 · 11:10'; // shown in Settings
-const SETTINGS_KEY = 'pebbble-writer-settings';
-const LIB_CACHE = 'pebbble-writer-library'; // also read by the player to offer Edit
+const VERSION = '2026-10-28 · 08:10'; // shown in Settings
+const SETTINGS_KEY = 'pebbble-writer-settings'; // sealed with the key phrase: { v, salt, sealed }
+const UNLOCK_KEY = 'pebbble-writer-unlock';     // this tab's device key, until the writer is closed
+const LIB_CACHE = 'pebbble-writer-library';     // no keys; also read by the player to offer Edit
 const canNfc = 'NDEFReader' in window;
 
 let view = 'none';
@@ -21,13 +23,46 @@ const sheets = createSheets({ onOpen: id => { if (id === 'settings-sheet') rende
 
 // ---------- settings on this device ----------
 // { accountId, jurisdiction?, accessKeyId, secretAccessKey, bucket, publicBase, libId, libKey, setupKey }
-// The key phrase itself is never kept: only keys derived from it.
+// The key phrase itself is never kept: only keys derived from it. On the device, the settings are
+// sealed with a key from the phrase (F.sealDevice), so the writer asks for the phrase each time it
+// opens; this tab keeps that key until it is closed. Until a phrase is chosen, they stay in memory.
 
-function loadSettings() {
-    try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch { return {}; }
+let settings = {};
+let device = null; // { salt, key } once the key phrase was typed in this tab
+
+function stored() {
+    try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)); } catch { return null; }
 }
+const isLocked = () => !!stored()?.sealed && !device;
+const needsPhrase = () => !!stored() && !device; // sealed, or kept readable from before the lock: sealed once typed
+
+function loadSettings() { return settings; }
 function saveSettings(s) {
-    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch {}
+    settings = s;
+    if (device) persist();
+}
+let persisting = Promise.resolve();
+function persist() {
+    const snapshot = { ...settings }, { salt, key } = device;
+    persisting = persisting.then(async () => {
+        try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(await F.sealDevice(snapshot, salt, key))); } catch {}
+    });
+    return persisting;
+}
+/** Open what this device keeps with the key this tab still holds, if any. */
+async function unlockFromSession() {
+    const st = stored();
+    if (!st) return;
+    if (!st.sealed) { settings = st; return; } // set up before the lock: sealed once the phrase is typed
+    let key = null;
+    try { key = sessionStorage.getItem(UNLOCK_KEY); } catch {}
+    if (!key) return;
+    try { settings = await F.openDevice(st, key); device = { salt: st.salt, key }; }
+    catch { try { sessionStorage.removeItem(UNLOCK_KEY); } catch {} }
+}
+function holdUnlock(d) {
+    device = d;
+    try { sessionStorage.setItem(UNLOCK_KEY, d.key); } catch {}
 }
 const STORAGE_FIELDS = ['accountId', 'accessKeyId', 'secretAccessKey', 'bucket', 'publicBase'];
 const hasStorage = () => STORAGE_FIELDS.every(k => loadSettings()[k]);
@@ -45,7 +80,12 @@ const publicBase = (s = loadSettings()) => (config.devEndpoint ? config.publicBa
 
 let library = F.newLibrary();
 const libCreds = () => { const s = loadSettings(); return s.libId ? { libId: s.libId, libKey: s.libKey } : null; };
-const cacheLibrary = () => { try { localStorage.setItem(LIB_CACHE, JSON.stringify(library)); } catch {} };
+// The copy on this device holds no keys: names and stones for the shelf, ids for the player's Edit.
+const cacheLibrary = () => {
+    const items = library.items.map(({ id, name, cover, for: to, count, updated }) => ({ id, name, cover, for: to, count, updated }));
+    try { localStorage.setItem(LIB_CACHE, JSON.stringify({ ...library, items })); } catch {}
+};
+let libraryLoad = null;
 const cachedLibrary = () => { try { return JSON.parse(localStorage.getItem(LIB_CACHE)) || F.newLibrary(); } catch { return F.newLibrary(); } };
 
 async function fetchLibrary(lc = libCreds()) {
@@ -125,13 +165,13 @@ const KEY_MIN = 8;
 let pendingCode = null;
 function renderKey() {
     view = 'key';
-    const mode = pendingCode ? 'join' : loadSettings().libId ? 'again' : 'new';
+    const mode = isLocked() ? 'unlock' : pendingCode ? 'join' : loadSettings().libId ? 'again' : 'new';
     const known = mode !== 'new';
     draw(`<section class="welcome">
         <div class="stone appear">${stone('pebbble-1')}</div>
-        <p class="eyebrow appear d1">${t('writer.key.eyebrow')}</p>
+        <p class="eyebrow appear d1">${t(mode === 'unlock' || mode === 'again' ? 'writer.key.eyebrowUnlock' : 'writer.key.eyebrow')}</p>
         <h1 class="serif appear d1">${t(known ? 'writer.key.titleJoin' : 'writer.key.title')}</h1>
-        <p class="lead appear d2">${t({ new: 'writer.key.lead', join: 'writer.key.leadJoin', again: 'writer.key.leadAgain' }[mode], { n: KEY_MIN })}</p>
+        <p class="lead appear d2">${t({ new: 'writer.key.lead', join: 'writer.key.leadJoin', again: 'writer.key.leadAgain', unlock: 'writer.key.leadUnlock' }[mode], { n: KEY_MIN })}</p>
         <form class="appear d3" autocomplete="off" onsubmit="return false">
             <input class="field" id="k-in" type="password" autocomplete="new-password" data-lpignore="true" placeholder="${esc(t(known ? 'writer.key.placeholderKnown' : 'writer.key.placeholder', { n: KEY_MIN }))}">
             ${known ? '' : `<p class="note">${t('writer.key.lose')}</p>`}
@@ -145,6 +185,15 @@ function renderKey() {
         $('k-go').disabled = true;
         $('k-go').textContent = t('writer.key.opening');
         try {
+            if (mode === 'unlock') {
+                const st = stored();
+                const key = await F.deriveDeviceKey(phrase, st.salt);
+                try { settings = await F.openDevice(st, key); }
+                catch { $('k-msg').textContent = t('writer.key.notSame'); shake($('k-in')); return; }
+                holdUnlock({ salt: st.salt, key });
+                await afterKey();
+                return;
+            }
             const setupKey = await F.deriveSetupKey(phrase);
             let s = loadSettings();
             if (mode === 'join') {
@@ -154,10 +203,13 @@ function renderKey() {
             const lib = await F.deriveLibrary(phrase, config.devEndpoint ? 'dev' : s.bucket);
             if (mode === 'again' && lib.libId !== s.libId) { $('k-msg').textContent = t('writer.key.notSame'); shake($('k-in')); return; }
             Object.assign(s, { setupKey }, lib);
+            const salt = F.newDeviceSalt();
+            holdUnlock({ salt, key: await F.deriveDeviceKey(phrase, salt) });
             saveSettings(s);
+            await persisting;
             pendingCode = null;
             if (mode !== 'again') { try { localStorage.removeItem(LIB_CACHE); } catch {} }
-            await home();
+            await afterKey();
         } finally {
             if ($('k-go')) { $('k-go').disabled = false; $('k-go').textContent = t('writer.key.go'); }
         }
@@ -181,8 +233,12 @@ function renderLibrary() {
     $('gear').onclick = () => sheets.open('settings-sheet');
     $('new').onclick = newPebbble;
     for (const b of $('shelf').querySelectorAll('button[data-id]')) {
-        const it = items.find(i => i.id === b.dataset.id);
-        b.onclick = () => openPebbble({ id: it.id, key: it.key });
+        b.onclick = async () => {
+            await libraryLoad; // the shelf may show the device copy, which has no keys
+            const it = library.items.find(i => i.id === b.dataset.id);
+            if (!it?.key) { toast(t('writer.offline')); return; }
+            openPebbble({ id: it.id, key: it.key });
+        };
     }
     $('tap-hint').onclick = () => (canNfc ? scanStone() : openLinkSheet());
     $('paste-link').onclick = openLinkSheet;
@@ -190,11 +246,22 @@ function renderLibrary() {
 
 async function home() {
     stopScan();
+    if (needsPhrase()) return renderKey();
     if (!hasStorage()) return renderWelcome();
     if (!hasKeys()) return renderKey();
     library = cachedLibrary();
     renderLibrary();
-    try { library = await fetchLibrary(); cacheLibrary(); if (view === 'library') renderLibrary(); } catch {}
+    libraryLoad = fetchLibrary().then(lib => { library = lib; cacheLibrary(); if (view === 'library') renderLibrary(); }).catch(() => {});
+    await libraryLoad;
+}
+
+/** After the key phrase: the pebbble the player's Edit asked for, or my pebbbles. */
+let pendingOpen = null;
+async function afterKey() {
+    const p = pendingOpen;
+    pendingOpen = null;
+    if (p && hasStorage() && hasKeys()) { library = cachedLibrary(); return openPebbble(p); }
+    return home();
 }
 
 // ---------- setup: guided ----------
@@ -928,7 +995,9 @@ $('s-share').onclick = openShare;
 $('s-disconnect').onclick = async () => {
     const b = $('s-disconnect');
     if (!b.dataset.confirm) { b.dataset.confirm = '1'; b.textContent = t('writer.settings.disconnectConfirm'); return; }
-    try { localStorage.removeItem(SETTINGS_KEY); localStorage.removeItem(LIB_CACHE); } catch {}
+    try { localStorage.removeItem(SETTINGS_KEY); localStorage.removeItem(LIB_CACHE); sessionStorage.removeItem(UNLOCK_KEY); } catch {}
+    settings = {};
+    device = null;
     library = F.newLibrary();
     sheets.closeAll();
     await home();
@@ -957,9 +1026,11 @@ revealPasswords();
 // Opened from the player's Edit: writer/#<id>.<key>
 const fromPlayer = F.parseFragment(location.hash);
 if (fromPlayer) history.replaceState(null, '', location.pathname);
-if (fromPlayer && hasStorage() && hasKeys()) {
+await unlockFromSession();
+if (fromPlayer && !needsPhrase() && hasStorage() && hasKeys()) {
     library = cachedLibrary();
     openPebbble(fromPlayer);
 } else {
+    pendingOpen = fromPlayer; // opened after the key phrase
     home();
 }

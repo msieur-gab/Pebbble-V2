@@ -165,6 +165,8 @@
     },
     "key": {
       "eyebrow": "Presque fini",
+      "eyebrowUnlock": "Te revoilà",
+      "leadUnlock": "Elle ouvre le writer et tes pebbbles sur cet appareil.",
       "title": "Choisis une phrase-clé",
       "titleJoin": "Ta phrase-clé",
       "lead": "Elle ouvre la liste de tes pebbbles sur chaque appareil configuré. Au moins {n} caractères : mots, chiffres, signes, comme tu veux. Elle n’est jamais enregistrée ni envoyée.",

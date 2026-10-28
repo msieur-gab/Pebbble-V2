@@ -15,7 +15,7 @@ import { initI18n, setLanguage, language, LANGUAGES, t } from '../shared/i18n.js
 import { $, esc, mmss, stone, plural, ICON, dedication, belongsTo, createSheets, toast, shake, revealPasswords, hidePasswords } from '../shared/ui.js';
 
 const audio = $('audio');
-const VERSION = '2026-09-29 · 11:10'; // shown in Settings, to tell which version a phone runs
+const VERSION = '2026-10-28 · 08:10'; // shown in Settings, to tell which version a phone runs
 
 // ---------- state ----------
 let view = 'none';
@@ -528,10 +528,11 @@ function rerenderInstall() {
 
 // ---------- this pebbble: edit / forget / settings ----------
 
-function isMine({ id, key }) {
+function isMine({ id }) {
     try {
+        // The writer's copy holds no keys, only ids; the writer asks for its key phrase anyway.
         const lib = JSON.parse(localStorage.getItem('pebbble-writer-library'));
-        return !!lib?.items?.some(i => i.id === id && i.key === key);
+        return !!lib?.items?.some(i => i.id === id);
     } catch { return false; }
 }
 
