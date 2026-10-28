@@ -22,3 +22,19 @@ test('signature matches the aws4 reference implementation', async () => {
     assert.equal(ours.headers.authorization, ref.headers.Authorization);
     assert.equal(ours.url, 'https://abc123.r2.cloudflarestorage.com/pebbble/Xy_z-12/header');
 });
+
+test('a bucket in the EU is signed for the EU address', async () => {
+    const now = new Date('2026-09-28T08:00:00Z');
+    const eu = { ...creds, jurisdiction: 'eu' };
+    const ours = await sign(eu, 'GET', 'a/header', new Uint8Array(), now);
+    const ref = aws4.sign({
+        host: `${creds.accountId}.eu.r2.cloudflarestorage.com`,
+        method: 'GET',
+        path: '/pebbble/a/header',
+        service: 's3',
+        region: 'auto',
+        headers: { 'X-Amz-Date': '20260928T080000Z', 'X-Amz-Content-Sha256': ours.headers['x-amz-content-sha256'] },
+    }, eu);
+    assert.equal(ours.headers.authorization, ref.headers.Authorization);
+    assert.equal(ours.url, 'https://abc123.eu.r2.cloudflarestorage.com/pebbble/a/header');
+});

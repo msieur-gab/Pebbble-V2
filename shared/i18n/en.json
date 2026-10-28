@@ -148,7 +148,8 @@
       "secret": "Secret access key",
       "connect": "Connect",
       "checking": "Checking…",
-      "missing": "Fill in every step first.",
+      "empty": "Fill in “{field}”.",
+      "unreadable": "The writer can’t read “{field}”. Paste it exactly as Cloudflare shows it.",
       "badKey": "Cloudflare refused the key. Check the S3 address, the access key and the secret.",
       "badPublic": "Saving works, but the public address doesn't show the bucket. Check step 2 and its CORS rule.",
       "connected": "Storage connected"

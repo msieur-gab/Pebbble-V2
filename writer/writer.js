@@ -20,7 +20,7 @@ let view = 'none';
 const sheets = createSheets({ onOpen: id => { if (id === 'settings-sheet') renderSettings(); }, onClose: () => { stopRecording(); hidePasswords(); } });
 
 // ---------- settings on this device ----------
-// { accountId, accessKeyId, secretAccessKey, bucket, publicBase, libId, libKey, setupKey }
+// { accountId, jurisdiction?, accessKeyId, secretAccessKey, bucket, publicBase, libId, libKey, setupKey }
 // The key phrase itself is never kept: only keys derived from it.
 
 function loadSettings() {
@@ -186,7 +186,7 @@ function openGuide() {
     const s = loadSettings();
     $('g-bucket').value = s.bucket || 'pebbble';
     $('g-public').value = s.publicBase || '';
-    $('g-endpoint').value = s.accountId ? `https://${s.accountId}.r2.cloudflarestorage.com` : '';
+    $('g-endpoint').value = s.accountId ? `https://${s.accountId}${s.jurisdiction ? `.${s.jurisdiction}` : ''}.r2.cloudflarestorage.com` : '';
     $('g-key').value = s.accessKeyId || '';
     $('g-secret').value = s.secretAccessKey || '';
     $('g-cors').textContent = CORS;
@@ -196,29 +196,50 @@ function openGuide() {
 }
 function markSteps() {
     $('step-1').classList.toggle('done', !!$('g-bucket').value.trim());
-    $('step-2').classList.toggle('done', /^https:\/\/\S+/.test($('g-public').value.trim()));
+    $('step-2').classList.toggle('done', !!publicFrom($('g-public').value));
     $('step-3').classList.toggle('done', !!(accountFrom($('g-endpoint').value) && $('g-key').value.trim() && $('g-secret').value.trim()));
 }
 for (const id of ['g-bucket', 'g-public', 'g-endpoint', 'g-key', 'g-secret']) $(id).oninput = markSteps;
-/** The account ID, from the S3 address Cloudflare shows or typed on its own. */
+/**
+ * The account ID, and the jurisdiction of a bucket created in the EU (or FedRAMP), from what
+ * Cloudflare shows: the S3 address with or without https:// and the bucket, or the ID on its own.
+ */
 function accountFrom(text) {
     const v = text.trim();
-    return /^https:\/\/([a-z0-9]+)\.r2\.cloudflarestorage\.com/i.exec(v)?.[1] || (/^[a-z0-9]{16,}$/i.test(v) ? v : '');
+    const m = /([a-z0-9]{16,})(?:\.(eu|fedramp))?\.r2\.cloudflarestorage\.com/i.exec(v);
+    if (m) return { accountId: m[1].toLowerCase(), jurisdiction: (m[2] || '').toLowerCase() };
+    return /^[a-z0-9]{16,}$/i.test(v) ? { accountId: v.toLowerCase(), jurisdiction: '' } : null;
+}
+/** The public address, with https:// added when it was left out. */
+function publicFrom(text) {
+    const v = text.trim().replace(/\/+$/, '');
+    if (!v || /\s/.test(v)) return '';
+    const url = /^https?:\/\//i.test(v) ? v : `https://${v}`;
+    return /^https?:\/\/[^/]+\.[^/]+/i.test(url) ? url : '';
 }
 $('g-cors-copy').onclick = () => copy(CORS);
 
 $('g-connect').onclick = async () => {
     markSteps();
+    const account = accountFrom($('g-endpoint').value);
     const s = {
         ...loadSettings(),
         bucket: $('g-bucket').value.trim(),
-        publicBase: $('g-public').value.trim().replace(/\/$/, ''),
-        accountId: accountFrom($('g-endpoint').value),
+        publicBase: publicFrom($('g-public').value),
+        accountId: account?.accountId || '',
+        jurisdiction: account?.jurisdiction || '',
         accessKeyId: $('g-key').value.trim(),
         secretAccessKey: $('g-secret').value.trim(),
     };
-    const missing = STORAGE_FIELDS.find(k => !s[k]);
-    if (missing) { $('g-msg').textContent = t('writer.guide.missing'); return; }
+    // Name the first field that can't be read, rather than a general "fill in everything".
+    const unread = [['bucket', 'g-bucket'], ['publicBase', 'g-public'], ['accountId', 'g-endpoint'], ['accessKeyId', 'g-key'], ['secretAccessKey', 'g-secret']]
+        .find(([k]) => !s[k])?.[1];
+    if (unread) {
+        const field = document.querySelector(`label[for="${unread}"]`).textContent;
+        $('g-msg').textContent = t($(unread).value.trim() ? 'writer.guide.unreadable' : 'writer.guide.empty', { field });
+        shake($(unread));
+        return;
+    }
     $('g-connect').disabled = true;
     $('g-msg').textContent = '';
     $('g-connect').textContent = t('writer.guide.checking');
@@ -255,7 +276,7 @@ function openShare() {
     const s = loadSettings();
     $('share-code').textContent = '…';
     sheets.open('share-sheet');
-    F.sealSetup(Object.fromEntries(STORAGE_FIELDS.map(k => [k, s[k]])), s.setupKey).then(code => { $('share-code').textContent = code; });
+    F.sealSetup(Object.fromEntries([...STORAGE_FIELDS, 'jurisdiction'].map(k => [k, s[k]])), s.setupKey).then(code => { $('share-code').textContent = code; });
 }
 $('share-copy').onclick = () => copy($('share-code').textContent);
 

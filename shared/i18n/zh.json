@@ -148,7 +148,8 @@
       "secret": "Secret access key",
       "connect": "连接",
       "checking": "正在检查…",
-      "missing": "请先完成每一步。",
+      "empty": "请填写“{field}”。",
+      "unreadable": "无法识别“{field}”。请按 Cloudflare 显示的内容原样粘贴。",
       "badKey": "Cloudflare 拒绝了这把钥匙。请检查 S3 地址、access key 和 secret。",
       "badPublic": "可以保存，但公开地址看不到这个 bucket。请检查第 2 步及其 CORS 规则。",
       "connected": "存储空间已连接"

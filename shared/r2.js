@@ -25,8 +25,9 @@ export async function get(publicBase, path, { fresh = false } = {}) {
  * Build signed request headers for one S3 call.
  * Exported for tests; `now` lets tests pin the timestamp.
  */
-export async function sign({ accountId, accessKeyId, secretAccessKey, bucket, endpoint }, method, key, body = new Uint8Array(), now = new Date()) {
-    const base = endpoint || `https://${accountId}.r2.cloudflarestorage.com`; // endpoint: local dev server only
+export async function sign({ accountId, jurisdiction, accessKeyId, secretAccessKey, bucket, endpoint }, method, key, body = new Uint8Array(), now = new Date()) {
+    // jurisdiction: 'eu' or 'fedramp' for buckets created there; endpoint: local dev server only
+    const base = endpoint || `https://${accountId}${jurisdiction ? `.${jurisdiction}` : ''}.r2.cloudflarestorage.com`;
     const host = new URL(base).host;
     const uri = `/${encodeSegment(bucket)}/${key.split('/').map(encodeSegment).join('/')}`;
     const amzDate = now.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');

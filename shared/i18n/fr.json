@@ -148,7 +148,8 @@
       "secret": "Secret access key",
       "connect": "Connecter",
       "checking": "Vérification…",
-      "missing": "Remplis d’abord chaque étape.",
+      "empty": "Remplis « {field} ».",
+      "unreadable": "Le writer ne reconnaît pas « {field} ». Colle-le tel que Cloudflare l’affiche.",
       "badKey": "Cloudflare a refusé la clé. Vérifie l’adresse S3, l’access key et le secret.",
       "badPublic": "L’enregistrement marche, mais l’adresse publique ne montre pas le bucket. Vérifie l’étape 2 et sa règle CORS.",
       "connected": "Stockage connecté"

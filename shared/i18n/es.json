@@ -148,7 +148,8 @@
       "secret": "Secret access key",
       "connect": "Conectar",
       "checking": "Comprobando…",
-      "missing": "Completa primero cada paso.",
+      "empty": "Rellena «{field}».",
+      "unreadable": "El writer no reconoce «{field}». Pégalo tal como lo muestra Cloudflare.",
       "badKey": "Cloudflare rechazó la clave. Revisa la dirección S3, la access key y el secret.",
       "badPublic": "Guardar funciona, pero la dirección pública no muestra el bucket. Revisa el paso 2 y su regla CORS.",
       "connected": "Almacenamiento conectado"
