@@ -163,7 +163,7 @@
       "eyebrow": "Presque fini",
       "title": "Choisis une phrase-clé",
       "titleJoin": "Ta phrase-clé",
-      "lead": "Elle ouvre la liste de tes pebbbles sur chaque appareil configuré. Au moins 12 caractères : mots, chiffres, signes, comme tu veux. Elle n’est jamais enregistrée ni envoyée.",
+      "lead": "Elle ouvre la liste de tes pebbbles sur chaque appareil configuré. Au moins {n} caractères : mots, chiffres, signes, comme tu veux. Elle n’est jamais enregistrée ni envoyée.",
       "leadJoin": "Celle choisie sur ton autre appareil. Elle ouvre le code de configuration et la liste de tes pebbbles.",
       "placeholder": "Au moins {n} caractères",
       "lose": "Si tu la perds, la liste est perdue, mais les pierres continuent de marcher : tu peux rouvrir chacune en l’approchant du téléphone.",

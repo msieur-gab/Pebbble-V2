@@ -163,7 +163,7 @@
       "eyebrow": "Almost there",
       "title": "Choose a key phrase",
       "titleJoin": "Your key phrase",
-      "lead": "It opens your list of pebbbles on every device you set up. At least 12 characters: words, numbers, signs, as you like. It is never saved or sent.",
+      "lead": "It opens your list of pebbbles on every device you set up. At least {n} characters: words, numbers, signs, as you like. It is never saved or sent.",
       "leadJoin": "The one you chose on your other device. It opens the setup code and your list of pebbbles.",
       "placeholder": "At least {n} characters",
       "lose": "Lose it and the list is gone, but the stones keep working: you can reopen each one by holding it to the phone.",

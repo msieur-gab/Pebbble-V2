@@ -45,14 +45,14 @@ const setupGuided = async (pg, phrase) => {
 };
 const on = (pg, id) => pg.waitForSelector(`#${id}.on`);
 const off = (pg, id) => pg.waitForSelector(`#${id}:not(.on)`, { state: 'attached' });
-// A new key phrase needs 12 characters; the eye shows what was typed
+// A new key phrase needs 8 characters; the eye shows what was typed
 await page.goto(base + '/writer/');
 await page.click('#c-guide'); await on(page, 'guide-sheet');
 await page.fill('#g-public', 'https://pub-example.r2.dev');
 await page.fill('#g-endpoint', 'https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com');
 await page.fill('#g-key', 'key'); await page.fill('#g-secret', 'secret');
 await page.click('#g-connect'); await page.waitForSelector('#k-in');
-await page.fill('#k-in', 'short one'); await page.click('#k-go');
+await page.fill('#k-in', 'pierre'); await page.click('#k-go');
 log('short new key phrase refused:', await page.textContent('#k-msg'));
 await page.click('#k-in + .reveal');
 log('eye shows the phrase:', await page.$eval('#k-in', i => i.type), '| label now:', await page.$eval('#k-in + .reveal', b => b.getAttribute('aria-label')));

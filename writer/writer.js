@@ -102,7 +102,7 @@ function renderWelcome() {
  *   again — this device knew the phrase before setup codes existed: it must give the same list
  * An existing phrase is never refused for its length.
  */
-const KEY_MIN = 12;
+const KEY_MIN = 8;
 let pendingCode = null;
 function renderKey() {
     view = 'key';
@@ -112,7 +112,7 @@ function renderKey() {
         <div class="stone appear">${stone('pebbble-1')}</div>
         <p class="eyebrow appear d1">${t('writer.key.eyebrow')}</p>
         <h1 class="serif appear d1">${t(known ? 'writer.key.titleJoin' : 'writer.key.title')}</h1>
-        <p class="lead appear d2">${t({ new: 'writer.key.lead', join: 'writer.key.leadJoin', again: 'writer.key.leadAgain' }[mode])}</p>
+        <p class="lead appear d2">${t({ new: 'writer.key.lead', join: 'writer.key.leadJoin', again: 'writer.key.leadAgain' }[mode], { n: KEY_MIN })}</p>
         <form class="appear d3" autocomplete="off" onsubmit="return false">
             <input class="field" id="k-in" type="password" autocomplete="new-password" data-lpignore="true" placeholder="${esc(t(known ? 'writer.key.placeholderKnown' : 'writer.key.placeholder', { n: KEY_MIN }))}">
             ${known ? '' : `<p class="note">${t('writer.key.lose')}</p>`}

@@ -54,6 +54,7 @@ No build step and no runtime dependencies.
 npm install          # test dependency only
 npm test             # format, request-signing and language-file tests
 npm run serve        # http://localhost:8787/writer/ — local server stands in for R2
+# add ?r2 (http://localhost:8787/writer/?r2) to use the real bucket instead
 npm run e2e          # full writer → player flow in headless Chromium (needs playwright)
 ```
 
