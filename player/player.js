@@ -15,7 +15,7 @@ import { initI18n, setLanguage, language, LANGUAGES, t } from '../shared/i18n.js
 import { $, esc, mmss, stone, plural, ICON, dedication, belongsTo, createSheets, toast, shake, revealPasswords, hidePasswords } from '../shared/ui.js';
 
 const audio = $('audio');
-const VERSION = '2026-10-28 · 09:03'; // shown in Settings, to tell which version a phone runs
+const VERSION = '2026-10-28 · 16:30'; // shown in Settings, to tell which version a phone runs
 
 // ---------- state ----------
 let view = 'none';
@@ -256,6 +256,7 @@ async function playAt(i) {
         await audio.play().catch(() => toast(t('status.tapPlay'))); // blocked without a touch: stay paused
     } catch {
         PL.loading = false;
+        keepAwake.pause();
         toast(t('status.couldNotPlay', { title: tr.title }));
     }
     updatePlayer();
@@ -282,12 +283,41 @@ function skip(dir) {
 }
 
 audio.addEventListener('ended', () => {
-    if (PL.sleep === -1) { PL.sleep = 0; toast(t('player.slept')); updatePlayer(); return; }
     const list = openIdx(), pos = list.indexOf(PL.idx);
-    if (pos < list.length - 1) return playAt(list[pos + 1]);
-    if (PL.repeat === 'all' && list.length) return playAt(list[0]);
+    if (PL.sleep === -1) { PL.sleep = 0; toast(t('player.slept')); }
+    else if (pos < list.length - 1) return playAt(list[pos + 1]);
+    else if (PL.repeat === 'all' && list.length) return playAt(list[0]);
+    keepAwake.pause(); // nothing follows: the phone may rest
     updatePlayer();
 });
+
+// Android freezes a browser that falls silent in the background, even for the moment between
+// two voices, and the next voice then stops a minute later (seen on a Pixel 7, 28 Oct 2026).
+// So while the voices play, a silent sound plays with them and the phone never hears a gap.
+// It follows every pause (button, lock screen, sleep timer, headphones out) but not the end
+// of a voice, which the next one follows; the 'ended' handler above stops it when none does.
+const keepAwake = $('keep-awake');
+keepAwake.src = silence();
+audio.addEventListener('play', () => keepAwake.play().catch(() => {}));
+audio.addEventListener('pause', () => { if (!audio.ended) keepAwake.pause(); });
+// iPhone lets a sound start on its own only once a touch has started it: do that on the first touch.
+addEventListener('click', () => keepAwake.play().then(() => { if (audio.paused && !PL.loading) keepAwake.pause(); }).catch(() => {}), { once: true });
+
+/**
+ * Ten seconds of silence as a WAV, made on the phone. 48 kHz stereo, the phone's own quality:
+ * the voices share its sound channel, and a lower rate would play them at that rate too.
+ */
+function silence() {
+    const rate = 48000, size = rate * 2 * 10; // 8-bit stereo: 2 bytes per frame
+    const wav = new DataView(new ArrayBuffer(44 + size));
+    const text = (at, s) => [...s].forEach((c, i) => wav.setUint8(at + i, c.charCodeAt(0)));
+    text(0, 'RIFF'); wav.setUint32(4, 36 + size, true); text(8, 'WAVEfmt ');
+    wav.setUint32(16, 16, true); wav.setUint16(20, 1, true); wav.setUint16(22, 2, true);
+    wav.setUint32(24, rate, true); wav.setUint32(28, rate * 2, true); wav.setUint16(32, 2, true); wav.setUint16(34, 8, true);
+    text(36, 'data'); wav.setUint32(40, size, true);
+    for (let i = 0; i < size; i++) wav.setUint8(44 + i, 128); // 8-bit audio is silent at 128
+    return URL.createObjectURL(new Blob([wav.buffer], { type: 'audio/wav' }));
+}
 audio.addEventListener('timeupdate', () => { checkSleep(); updateProgress(); });
 for (const ev of ['play', 'pause']) audio.addEventListener(ev, () => { updatePlayer(); renderVoices(); });
 

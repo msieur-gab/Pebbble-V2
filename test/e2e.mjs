@@ -146,6 +146,14 @@ await g.click('#device-no');
 log('wrong password →', await wrongThenRight(g));
 log('autoplay after Listen:', await playing(g));
 log('voices:', await voices(g));
+// The silent sound that keeps Android from freezing the page between voices
+const keepAwake = pg => pg.waitForFunction(() => !document.getElementById('keep-awake').paused, null, { timeout: 3000 }).then(() => 'playing', () => 'paused');
+log('keep-awake with the voice:', await keepAwake(g));
+await g.click('#next'); await playing(g);
+log('keep-awake after next voice:', await keepAwake(g));
+await g.click('#play');
+log('keep-awake after pause:', await g.waitForFunction(() => document.getElementById('keep-awake').paused, null, { timeout: 3000 }).then(() => 'paused', () => 'still playing'));
+await g.click('#play'); await playing(g);
 log('NOT-OWNED stored on phone', await idbCount(g), '| cached pebbble files:', await g.evaluate(async () => { let n = 0; for (const k of await caches.keys()) for (const r of await (await caches.open(k)).keys()) if (r.url.includes('/bucket/')) n++; return n; }));
 
 // Repeat, sleep timer, mini player
