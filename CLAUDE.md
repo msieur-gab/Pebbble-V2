@@ -81,6 +81,7 @@ Designed from the clickable renderings in `prototype/writer.html` (Gab approved 
 - `querySelector('div > div')` on a row matches the wrong element. Use explicit classes.
 - Recording: prefer `audio/mp4` (AAC, plays on iPhone) when `MediaRecorder.isTypeSupported`, else the browser default. Durations are measured in the writer (`audioDuration`) when a voice is added.
 - Autoplay: `audio.play()` without a user gesture rejects. Catch it and show "Tap play to listen".
+- **The silent `#keep-awake` sound in the player is essential: never remove it as dead code** (Gab, 28 Oct 2026). With the screen locked, the half second between two voices makes Chrome on Android lose its media foreground service; Android refuses it back from the background and freezes Chrome a minute later, mid-voice. The silent loop plays alongside the voices so the phone never hears a gap; it follows every pause and stops when no voice follows. Keep it at 48 kHz stereo: Chrome mixes the voices into the stream opened at its format, so a lower rate lowers the music's quality. Diagnosed and verified on a Pixel 7 over adb; the full story is in the brain, `knowledge/pwa/android-background-audio-freeze-between-tracks.md`.
 
 ## Testing
 
