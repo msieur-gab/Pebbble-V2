@@ -197,7 +197,9 @@
     "unlock": {
       "lead": "Its voices are locked. The hint says:",
       "leadNoHint": "Its voices are locked.",
-      "go": "Open to edit"
+      "go": "Open to edit",
+      "repaired": "Opened. Its password now ignores capitals and spaces, on every phone.",
+      "repairLater": "Opened. Save it once to repair its password for the player."
     },
     "editor": {
       "anotherStone": "Another stone",

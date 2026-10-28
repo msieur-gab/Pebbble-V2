@@ -208,10 +208,14 @@ export async function pwKeyStillValid(header, id, pwKey) {
     try { await open(pwKey, b64u.dec(header.pw.check), checkAad(id)); return true; } catch { return false; }
 }
 
-/** Returns pwKey, or throws 'wrong-password'. */
-export async function unlock(header, id, password) {
+/**
+ * Returns pwKey, or throws 'wrong-password'.
+ * asTyped: the password exactly as typed, which pebbbles locked before passwords became
+ * forgiving (28 Sep 2026) expect. Only the writer uses it, to repair them.
+ */
+export async function unlock(header, id, password, { asTyped = false } = {}) {
     const { salt, rounds, check } = header.pw;
-    const pwKey = await derivePwKey(relaxPassword(password), b64u.dec(salt), rounds);
+    const pwKey = await derivePwKey(asTyped ? password : relaxPassword(password), b64u.dec(salt), rounds);
     try {
         await open(pwKey, b64u.dec(check), checkAad(id));
     } catch {

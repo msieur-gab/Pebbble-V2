@@ -376,13 +376,23 @@ function renderUnlock() {
         </section>`);
     $('back').onclick = home;
     $('u-go').onclick = async () => {
+        const password = $('u-pw').value;
         try {
-            s.pwKey = await F.unlock(s.header, s.p.id, $('u-pw').value);
-            renderEditor();
+            s.pwKey = await F.unlock(s.header, s.p.id, password);
         } catch {
-            $('u-msg').textContent = t('lock.wrong');
-            shake($('u-pw'));
+            // Locked before passwords became forgiving? Then it opens exactly as typed, and is saved
+            // again in the forgiving form right away, so the player opens it too.
+            try { s.pwKey = await F.unlock(s.header, s.p.id, password, { asTyped: true }); }
+            catch { $('u-msg').textContent = t('lock.wrong'); shake($('u-pw')); return; }
+            try {
+                s.pwKey = await F.changePassword(s.header, s.p.id, s.pwKey, password, s.header.hint || '');
+                await R2.put(creds(), `${s.p.id}/header`, await F.sealHeader(s.header, s.p), { cacheControl: 'no-cache' });
+                toast(t('writer.unlock.repaired'));
+            } catch {
+                toast(t('writer.unlock.repairLater')); // the editor's next save writes it
+            }
         }
+        renderEditor();
     };
     setTimeout(() => $('u-pw')?.focus(), 300);
 }

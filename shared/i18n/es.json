@@ -197,7 +197,9 @@
     "unlock": {
       "lead": "Sus voces están cerradas. La pista dice:",
       "leadNoHint": "Sus voces están cerradas.",
-      "go": "Abrir para editar"
+      "go": "Abrir para editar",
+      "repaired": "Abierto. Su contraseña ya no distingue mayúsculas ni espacios, en cada teléfono.",
+      "repairLater": "Abierto. Guárdalo una vez para reparar su contraseña en el reproductor."
     },
     "editor": {
       "anotherStone": "Otra piedra",

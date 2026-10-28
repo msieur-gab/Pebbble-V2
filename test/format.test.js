@@ -152,3 +152,12 @@ test('setup code: opens only with the same key phrase', async () => {
     await assert.rejects(F.openSetup(code, await F.deriveSetupKey('other words')), /decrypt-failed/);
     await assert.rejects(F.openSetup('hello', await F.deriveSetupKey('x')), /not-a-setup-code/);
 });
+
+test('a password can be checked exactly as typed, for pebbbles locked before passwords were forgiving', async () => {
+    const { id } = F.newPebbble();
+    const header = F.newHeader();
+    await F.setPassword(header, id, 'muc');
+    await F.unlock(header, id, 'muc', { asTyped: true });
+    await assert.rejects(F.unlock(header, id, 'MUC', { asTyped: true }), /wrong-password/);
+    await F.unlock(header, id, 'MUC');
+});

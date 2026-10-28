@@ -197,7 +197,9 @@
     "unlock": {
       "lead": "Ses voix sont fermées. L’indice dit :",
       "leadNoHint": "Ses voix sont fermées.",
-      "go": "Ouvrir pour modifier"
+      "go": "Ouvrir pour modifier",
+      "repaired": "Ouvert. Son mot de passe ignore maintenant les majuscules et les espaces, sur chaque téléphone.",
+      "repairLater": "Ouvert. Enregistre-le une fois pour réparer son mot de passe dans le lecteur."
     },
     "editor": {
       "anotherStone": "Une autre pierre",
