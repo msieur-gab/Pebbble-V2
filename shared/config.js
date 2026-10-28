@@ -9,9 +9,10 @@ const realR2 = (() => { try { return sessionStorage.getItem('pebbble-real-r2') =
 const local = onLocalhost && !realR2;
 
 export const config = {
-    // Where the player lives. This is the address written onto every stone.
-    // Testing against the real bucket from localhost still writes the live player's address.
-    appBase: onLocalhost && realR2 ? 'https://msieur-gab.github.io/Pebbble-V2/player/' : new URL('../player/', import.meta.url).href,
+    // The address written onto every new stone: the site's root, whose resolver (pebbbl.es/resolver.js)
+    // forwards a stone's link to the player. Stones written before point at msieur-gab.github.io/Pebbble-V2/player/
+    // and keep working there. Only the local dev server (fake bucket, tests) writes its own player's address.
+    appBase: local ? new URL('../player/', import.meta.url).href : 'https://pebbbl.es/',
 
     // Public read URL of the R2 bucket (Cloudflare dashboard → bucket → Settings → Public access).
     publicBase: local ? `${location.origin}/bucket` : 'https://pub-073de7a826d54d4490642e8ce5e90072.r2.dev',
