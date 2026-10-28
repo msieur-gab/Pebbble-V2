@@ -62,7 +62,26 @@ async function changeLibrary(change) {
 }
 
 const libraryEntry = (p, header) => ({ id: p.id, key: p.key, name: header.name, cover: F.coverSeed(header, p.id), for: header.for, count: header.tracks.length, updated: Date.now() });
-const remember = (p, header) => changeLibrary(lib => F.upsertLibrary(lib, libraryEntry(p, header)));
+/**
+ * Add or update a pebbble in the list. For a pebbble with a password, the entry also keeps its
+ * password key (`pw`, derived from the password, never the password itself), so its maker opens it
+ * without the password. Without a new pwKey, the one already kept stays; no password, none kept.
+ */
+const remember = (p, header, pwKey = null) => changeLibrary(lib => {
+    const entry = libraryEntry(p, header);
+    const pw = !header.pw ? null : pwKey ? F.b64u.enc(pwKey) : lib.items.find(i => i.id === p.id)?.pw;
+    if (pw) entry.pw = pw;
+    return F.upsertLibrary(lib, entry);
+});
+/** The kept password key for this pebbble, when it still opens it (null after a change elsewhere). */
+async function keptPwKey(p, header) {
+    const find = () => library.items.find(i => i.id === p.id)?.pw;
+    if (!find()) { try { library = await fetchLibrary(); cacheLibrary(); } catch {} } // kept on another device since
+    const pw = find();
+    if (!pw) return null;
+    const pwKey = F.b64u.dec(pw);
+    return (await F.pwKeyStillValid(header, p.id, pwKey)) ? pwKey : null;
+}
 
 // ---------- views ----------
 
@@ -351,7 +370,8 @@ async function openPebbble(p) {
         const header = await F.openHeader(sealed, p);
         s = { p, header, pwKey: null, pending: [], removed: [], pwPlan: null, isNew: false };
         remember(p, header).catch(() => {}); // opening a stone adds it to the list
-        if (header.pw) renderUnlock();
+        if (header.pw) s.pwKey = await keptPwKey(p, header); // its maker doesn't need the password
+        if (header.pw && !s.pwKey) renderUnlock();
         else renderEditor();
     } catch (e) {
         await home();
@@ -392,6 +412,7 @@ function renderUnlock() {
                 toast(t('writer.unlock.repairLater')); // the editor's next save writes it
             }
         }
+        remember(s.p, s.header, s.pwKey).catch(() => {}); // next time, no password
         renderEditor();
     };
     setTimeout(() => $('u-pw')?.focus(), 300);
@@ -783,7 +804,7 @@ async function save() {
         await R2.put(c, `${p.id}/header`, await F.sealHeader(header, p), { cacheControl: 'no-cache' });
         for (const file of s.removed) await R2.del(c, `${p.id}/${file}`);
         s.removed = [];
-        await remember(p, header);
+        await remember(p, header, s.pwKey);
         try { localStorage.setItem('pebbble-writer-from', header.from); localStorage.setItem('pebbble-writer-contact', header.contact); } catch {}
 
         const wasNew = s.isNew;

@@ -219,9 +219,8 @@ await page.waitForSelector('#shelf button[data-id]');
 await page.click('#tap-hint');
 await page.waitForFunction(() => document.getElementById('tap-text').textContent.startsWith('Listening'));
 await tapStone(page, url);
-await page.waitForSelector('#u-pw');
-await page.fill('#u-pw', 'caillou'); await page.click('#u-go');
 await page.waitForSelector('#e-voices');
+log('its maker opens it without the password:', !(await page.$('#u-pw')));
 await add(page, 'Added later', 'always');
 // Listen to a saved voice before deciding to keep it
 await page.click('#e-voices .voice[data-kind="track"]'); await on(page, 'voice-sheet');
@@ -278,10 +277,8 @@ await playing(mine);
 await mine.click('#open-menu'); await on(mine, 'menu-sheet');
 log('menu on creator phone:', await mine.$$eval('#menu-sheet .menu-row:not([hidden]) b', b => b.map(x => x.textContent)));
 await mine.click('#m-edit');
-await mine.waitForSelector('#u-pw');
-log('Edit opened writer | address', mine.url());
-await mine.fill('#u-pw', 'caillou'); await mine.click('#u-go');
 await mine.waitForSelector('#e-voices');
+log('Edit opened writer, no password | address', mine.url());
 log('editing', await mine.inputValue('#e-name'), 'with', await mine.$$eval('#e-voices .voice', r => r.length), 'voices');
 
 // Guest phone: no Edit
@@ -319,9 +316,8 @@ log('same phrase: list back,', await pc.$$eval('#shelf button[data-id]', r => r.
 // Change the password and hint on the computer; recordings untouched
 const before = readdirSync(`.dev-bucket/${id}`).filter(f => f !== 'header').map(f => f + readFileSync(`.dev-bucket/${id}/${f}`).length).sort().join();
 await pc.click('#shelf button[data-id]');
-await pc.waitForSelector('#u-pw');
-await pc.fill('#u-pw', 'caillou'); await pc.click('#u-go');
 await pc.waitForSelector('#e-voices');
+log('second device, same list: opens without the password:', !(await pc.$('#u-pw')));
 await pc.click('#r-pw'); await on(pc, 'pw-sheet');
 await pc.fill('#pw-in', 'galet'); await pc.fill('#pw-hint', 'on the beach');
 await pc.click('#pw-save'); await off(pc, 'pw-sheet');
@@ -347,9 +343,8 @@ log('forgotten: stored on phone', await idbCount(own2), '| library shows:', awai
 
 // Remove the password entirely
 await pc.click('#shelf button[data-id]');
-await pc.waitForSelector('#u-pw');
-await pc.fill('#u-pw', 'galet'); await pc.click('#u-go');
 await pc.waitForSelector('#e-voices');
+log('after the change, still no password for its maker:', !(await pc.$('#u-pw')));
 await pc.click('#r-pw'); await on(pc, 'pw-sheet');
 await pc.click('#pw-remove'); await off(pc, 'pw-sheet');
 log('password row now:', await pc.$eval('#r-pw span span', el => el.textContent));
